@@ -219,6 +219,38 @@ html.wipe-hold::after { content: "KNIT"; position: fixed; left: 0; right: 0; bot
 .swipe-top::before { content: ""; position: absolute; top: 0; bottom: 0; left: -14px; width: 14px; background: linear-gradient(to left, rgba(20, 18, 10, .14), transparent); }
 #app.swiping { will-change: transform; }
 
+/* iPad. Portrait (iPad Air 820 px wide): one column, larger text and diagrams for reading at a distance.
+   Wider (iPad Air landscape 1180 px, large iPads): two columns, the left one stays in view. */
+@media (min-width: 700px) {
+  body { font-size: 20px; }
+  .wrap { max-width: 700px; }
+  .top-bar .wrap { max-width: 900px; }
+  .step { padding-block: 24px; }
+  .step .text { font-size: 1.5rem; }
+  .step .aside { font-size: 1.05rem; }
+  .seg-blocks, .b { height: 46px; }
+  .b { font-size: .9rem; border-radius: 9px; }
+  .b-st { width: 34px; }
+  .b-dec { width: 46px; font-size: .85rem; }
+  .b-mid { min-width: 34px; border-radius: 17px; }
+  .b-mk { width: 5px; margin: 0 4px; }
+  .seg .n { height: 28px; font-size: .9rem; }
+  .seg .n span { min-width: 28px; height: 28px; line-height: 28px; border-radius: 14px; }
+  .diagram { padding: 18px 18px 14px; }
+  .dock .wrap { max-width: 700px; }
+  .sheet { max-width: 700px; border-radius: 18px 18px 0 0; }
+}
+@media (min-width: 1000px) {
+  .wrap, .top-bar .wrap { max-width: 1120px; }
+  .panes { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 56px; align-items: start; }
+  .pane-a { position: sticky; top: 0; padding-bottom: 24px; }
+  .pane-b { padding-top: 34px; }
+  .pane-b > .block-label:first-child { margin-top: 0; }
+  .pane-b > .steps .step:first-child { border-top: 0; padding-top: 0; }
+  /* The bottom buttons sit under the steps, in the right column. */
+  .dock .dock-row { max-width: 1120px; padding-left: calc((100% - 56px) * 5 / 11 + 56px); }
+}
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
@@ -513,7 +545,7 @@ const PAGE_VIEWS = {
       <div class="chips">${SIZES.map(v => `<button class="chip" data-size="${v}" aria-pressed="${v === n}">${v} maskor</button>`).join("")}</div>
       ${OWN_SIZE[n] ? `<p class="hint" style="margin-top:10px">Mönstret säger ${OWN_SIZE[n]}. ${n} ger en maska till, så att mittmaskan hamnar exakt i mitten. <span class="inferred">Står inte i mönstret</span></p>` : ""}
 
-      <div class="block-label label">Så går det till</div>
+      ${SPLIT}<div class="block-label label">Så går det till</div>
       <ol class="plan-list">${plan.map(([p, t], i) => `<li><button data-page="${p}"><span class="no">${i + 1}</span><span class="txt">${esc(t)}</span></button></li>`).join("")}</ol>
 
       <div class="block-label label">Du behöver</div>
@@ -600,7 +632,7 @@ const PAGE_VIEWS = {
     const early = !finished() && rowsLeft(n, done) <= 2 ? `<div class="chips"><button class="chip" data-page="end">Maska av nu</button></div>` : "";
     return pageHead("Upprepa", title, intro) +
       status() + endWarning() + early +
-      `<div class="block-label label">Räkna dina maskor</div>
+      `${SPLIT}<div class="block-label label">Räkna dina maskor</div>
       <p class="hint">Så många maskor ska du ha efter att ha stickat båda varven så här många gånger. Varv 1 tar bort 2 maskor och varv 2 tar bort 4.</p>
       ${checkpoints(n).map(([k, c]) => `<div class="ing${k === pairs ? " current" : ""}"><span class="amt">${c}</span><span>efter ${k} ${k === 1 ? "gång" : "gånger"}${k === pairs ? " · du är här" : ""}</span></div>`).join("")}`;
   },
@@ -611,12 +643,22 @@ const PAGE_VIEWS = {
   }
 };
 
+/* On a wide screen (iPad) a page splits in two: the heading, status and row diagram on the left, where they stay
+   in view, and the steps on the right. A page splits where it says SPLIT, otherwise where its steps start.
+   On a phone the two parts just follow each other. */
+const SPLIT = "<!--split-->";
+function panes(html) {
+  let i = html.indexOf(SPLIT);
+  if (i < 0) i = html.indexOf('<ol class="steps">');
+  if (i < 0) return `<div class="pane-a">${html}</div>`;
+  return `<div class="pane-a">${html.slice(0, i)}</div><div class="pane-b">${html.slice(i)}</div>`;
+}
 const RIGHT = `<button class="top-link" data-sheet="ref">Ordlista</button>`;
 function guide() {
   // From a step, the back link goes to this pattern's overview; from the overview, to the pattern list.
   const up = S.page === "start" ? navBar("Mönster", `data-go="list"`, RIGHT) : navBar("Översikt", `data-page="start"`, RIGHT);
   return `${up}
-    <div class="scroll gutter page"><div class="wrap">${PAGE_VIEWS[S.page]()}</div></div>
+    <div class="scroll gutter page"><div class="wrap panes">${panes(PAGE_VIEWS[S.page]())}</div></div>
     <div class="dock gutter"><div class="wrap dock-row">
       ${prevPage() ? `<button class="dock-back" data-prev aria-label="Tillbaka">${ICON.back}</button>` : ""}
       <button class="big" data-next>${nextAction()[0]}</button>

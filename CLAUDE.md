@@ -5,7 +5,7 @@ Keep this file current. When the workflow, the structure or a standing preferenc
 ## Workflow
 
 - The app is served by GitHub Pages from `main`. Finish changes in the session and merge them to `main` right away, so the app updates.
-- Check changes in a phone-width browser (390 px) with Playwright before merging.
+- Check changes in a phone-width browser (390 px) with Playwright before merging, and on iPad Air sizes (820×1180, 1180×820) when the layout changes.
 - Talk to Simon in Swedish. The app's text is Swedish.
 - Same look, feel and motion as the RECIPES app (simonjsv98/recipes): Google Sans, #F3F2EF background, fixed top bar with the update button in the middle on the start page, colour tile, a list page with a coloured title and dot, tappable steps, short fades between pages, swipe right to go back, sheets that slide up and down, a fixed button at the bottom. The motion code is copied from `build/kokslaget.html` in RECIPES; keep the two in step. KNIT's colours are brown #4A2212 with yellow #F9E27D (dots #F2C94C, note boxes #FBF1C9). The illustration is the filled ball of yarn with two needles, drawn by `build/make-art.js` (run it after changing the art or the colours; it updates `index.html` and the icons).
 
@@ -19,6 +19,7 @@ Keep this file current. When the workflow, the structure or a standing preferenc
 - On the knitting pages a status box shows the repeat, the row and the stitch count, and opens the row counter. The glossary, all "Bra att veta" notes and the original pattern are in the Ordlista sheet (top right). Each page also shows the notes that belong to it.
 - Row diagrams (`ROW1`, `ROW2`) show every part of the row in the order you knit it, numbered like the steps, with done steps faded and the next one marked. They must match the pattern exactly. They show order, not left and right on the needle.
 - The end is exact, not just "about 6": as written, row 1 needs 4 stitches on each side of the centre stitch and row 2 needs 6, so a row only counts if it fits (`minSide`, `canKnit`, `rowsLeft`). With 116 the last row is row 35 at 12 stitches; with 317 it is row 103 at 9 (with the pattern's 316 it would be 8). The guide then says to bind off.
+- iPad is handled by the same page with media queries, no separate version. From 700 px (iPad Air portrait, 820 px): one column, larger text and row diagrams. From 1000 px (iPad Air landscape, 1180 px, large iPads in portrait): two columns. `panes()` splits each guide page into a left part (heading, status, diagram), which stays in view, and a right part (the steps), at `SPLIT` or where the steps start. The bottom buttons sit under the right column. Check changes at 820×1180 and 1180×820 as well as 390 px.
 - The open page and ticked steps are saved, so the guide reopens where you left off. The screen stays on while a guide is open.
 
 ## Content
