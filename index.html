@@ -291,6 +291,7 @@ const S = {
   rows: {},          // rows finished, per size
   ticks: new Set(),  // step ids marked done
   page: "start",     // which page of the guide is open
+  last: null,        // the last step page, for "Fortsätt" on the overview
   sheet: null,       // "counter", "ref" or a term key
   resetArmed: false
 };
@@ -298,11 +299,21 @@ const pget = (k, d) => store.get(S.pattern + "-" + k, d);
 const pset = (k, v) => store.set(S.pattern + "-" + k, v);
 function openPattern(id) {
   S.pattern = id;
-  S.size = pget("size", 116);
+  // Simon switched to the large size on 2026-10-31. This moves a saved small size over once; after that the choice on the overview counts.
+  // Rows already counted with the small size chosen carry over, since it is the large one being knitted.
+  if (!pget("large-from-now", false)) {
+    if (pget("size", 116) === 116 && pget("rows-316", 0) === 0 && pget("rows-116", 0) > 0) pset("rows-316", pget("rows-116", 0));
+    pset("size", 316); pset("large-from-now", true);
+  }
+  S.size = pget("size", 316);
   S.rows = { 116: pget("rows-116", 0), 316: pget("rows-316", 0) };
   S.page = pget("page", "start");
   if (!PAGES.includes(S.page)) S.page = "start";
+  S.last = pget("last", null);   // the last step page, so the overview can continue from it
+  if (!PAGES.includes(S.last) || S.last === "start") S.last = null;
   S.ticks = new Set(pget("ticks", []));
+  // A knitting page always follows the row counter.
+  if (ROW_PAGES.includes(S.page) && S.page !== "r2b") setPage(rowPage());
 }
 const saveTicks = () => pset("ticks", [...S.ticks]);
 
@@ -581,8 +592,11 @@ const PAGE_VIEWS = {
   }
 };
 
+const RIGHT = `<button class="top-link" data-sheet="ref">Ordlista</button>`;
 function guide() {
-  return `${navBar("Mönster", `data-go="list"`, `<button class="top-link" data-sheet="ref">Ordlista</button>`)}
+  // From a step, the back link goes to this pattern's overview; from the overview, to the pattern list.
+  const up = S.page === "start" ? navBar("Mönster", `data-go="list"`, RIGHT) : navBar("Översikt", `data-page="start"`, RIGHT);
+  return `${up}
     <div class="scroll gutter page"><div class="wrap">${PAGE_VIEWS[S.page]()}</div></div>
     <div class="dock gutter"><div class="wrap dock-row">
       ${prevPage() ? `<button class="dock-back" data-prev aria-label="Tillbaka">${ICON.back}</button>` : ""}
@@ -653,7 +667,7 @@ function finishRow(r) {
   saveTicks();
 }
 const NEXT = {
-  start: ["Börja: lägg upp", () => go("cast")],
+  start: () => S.last && S.last !== "cast" ? [`Fortsätt: ${PAGE_NAMES[S.last]}`, () => go(S.last)] : ["Börja: lägg upp", () => go("cast")],
   cast: ["Nästa: markera mitten", () => go("mark")],
   mark: ["Nästa: varv 1", () => go("r1")],
   r1: ["Varv 1 klart", () => { finishRow(1); go(finished() ? "loop" : "r2a"); }],
@@ -662,11 +676,17 @@ const NEXT = {
   loop: () => finished() ? ["Nästa: maska av", () => go("end")] : ["Sticka varv 1 igen", () => go("r1")],
   end: ["Klar", () => show("list", "b")]
 };
+const PAGE_NAMES = { cast: "lägg upp", mark: "markera mitten", r1: "varv 1", r2a: "varv 2", r2b: "varv 2, andra halvan", loop: "upprepa", end: "maska av" };
 const nextAction = () => typeof NEXT[S.page] === "function" ? NEXT[S.page]() : NEXT[S.page];
 const PREV = { cast: "start", mark: "cast", r1: () => rowsDone() >= 2 ? "loop" : "mark", r2a: "r1", r2b: "r2a", loop: "r2b", end: "loop" };
 const prevPage = () => typeof PREV[S.page] === "function" ? PREV[S.page]() : PREV[S.page];
 
-const setPage = page => { S.page = page; pset("page", page); };
+const setPage = page => {
+  S.page = page; pset("page", page);
+  if (page !== "start") { S.last = page; pset("last", page); }
+};
+// The knitting page that matches the row counter.
+const rowPage = () => finished() ? "loop" : currentRow() === 1 ? "r1" : "r2a";
 function go(page) {
   const dir = PAGES.indexOf(page) < PAGES.indexOf(S.page) ? "b" : "f";
   transition(dir, () => setPage(page));
@@ -679,7 +699,7 @@ function show(view, dir) {
 /* After the row counter changes, a knitting page follows it to the row you are on. */
 function followCounter() {
   if (S.view !== "guide" || !ROW_PAGES.includes(S.page)) return;
-  setPage(finished() ? "loop" : currentRow() === 1 ? "r1" : "r2a");
+  setPage(rowPage());
 }
 
 function setRows(v) {
@@ -783,7 +803,12 @@ document.addEventListener("click", e => {
   if ("prev" in d) { const p = prevPage(); if (p) go(p); return; }
   if (d.sheet) return openSheet(d.sheet);
   if ("close" in d) return closeSheet();
-  if (d.size) { S.size = Number(d.size); pset("size", S.size); S.ticks.clear(); saveTicks(); return draw(); }
+  if (d.size) {
+    S.size = Number(d.size); pset("size", S.size); S.ticks.clear(); saveTicks();
+    // Each size has its own row count, so continue on the row that size is on.
+    if (ROW_PAGES.includes(S.last)) { S.last = rowPage(); pset("last", S.last); }
+    return draw();
+  }
   if (d.count) {
     const a = d.count;
     if (a === "next") {

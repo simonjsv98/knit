@@ -13,6 +13,8 @@ Keep this file current. When the workflow, the structure or a standing preferenc
 
 - Start page (tile) → pattern list (`PATTERNS`) → a pattern's guide. Each pattern saves its progress under its own id (`knit-<id>-…` in localStorage). Only the first pattern has a guide so far; a new pattern gets an entry in `PATTERNS` and its own pages.
 - The guide is one page per stage, not one long scroll: start (size, overview, what you need), cast on, mark the centre, row 1, row 2 in two halves (up to and after the centre stitch), repeat (stitch counts), bind off. `PAGES` and `PAGE_VIEWS` in `index.html`.
+- The large size (316) is the default; Simon is knitting it. The size can still be changed on the overview.
+- On a step page the top-left link goes to the pattern's overview ("← Översikt"); on the overview it goes to the pattern list. The overview's big button continues from the last step page ("Fortsätt: …").
 - The fixed bottom bar has a back button and the next action. "Varv 1 klart" and "Varv 2 klart" move the row counter on, but only when the counter is on that row, so going back and forward never counts twice. Swiping right is the same as back.
 - On the knitting pages a status box shows the repeat, the row and the stitch count, and opens the row counter. The glossary, all "Bra att veta" notes and the original pattern are in the Ordlista sheet (top right). Each page also shows the notes that belong to it.
 - Row diagrams (`ROW1`, `ROW2`) show every part of the row in the order you knit it, numbered like the steps, with done steps faded and the next one marked. They must match the pattern exactly. They show order, not left and right on the needle.
