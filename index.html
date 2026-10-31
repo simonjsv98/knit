@@ -268,7 +268,8 @@ const PURL_HOW = {
 /* The patterns on the list page. Each pattern keeps its own progress, saved under its id.
    Only the first has a guide so far; a new pattern gets an entry here and its own pages. */
 const PATTERNS = [
-  { id: "monster-1", title: "Första mönstret", sub: "116 eller 316 maskor · två varv som upprepas" }
+  // The id stays "monster-1" so saved progress is kept.
+  { id: "monster-1", title: "Ingrid Scarf", sub: "316 eller 116 maskor · två varv som upprepas" }
 ];
 
 const store = {
@@ -489,7 +490,7 @@ const PAGE_VIEWS = {
       ["loop", "Upprepa varv 1 och 2 tills ca 6 maskor är kvar"],
       ["end", "Maska av"]
     ];
-    return `<h1 class="title">Mönstret, steg för steg</h1>
+    return `<h1 class="title">${esc(PATTERNS.find(p => p.id === S.pattern).title)}</h1>
       <p class="intro">Hela mönstret är två varv som upprepas. Varje gång du stickat båda varven har du 6 maskor färre. Guiden tar ett moment i taget.</p>
 
       <div class="block-label label">Storlek</div>

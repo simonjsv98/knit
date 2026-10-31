@@ -11,7 +11,7 @@ Keep this file current. When the workflow, the structure or a standing preferenc
 
 ## Structure
 
-- Start page (tile) → pattern list (`PATTERNS`) → a pattern's guide. Each pattern saves its progress under its own id (`knit-<id>-…` in localStorage). Only the first pattern has a guide so far; a new pattern gets an entry in `PATTERNS` and its own pages.
+- Start page (tile) → pattern list (`PATTERNS`) → a pattern's guide. Each pattern saves its progress under its own id (`knit-<id>-…` in localStorage). The first pattern is Ingrid Scarf (id `monster-1`, kept so saved progress stays). Only it has a guide so far; a new pattern gets an entry in `PATTERNS` and its own pages.
 - The guide is one page per stage, not one long scroll: start (size, overview, what you need), cast on, mark the centre, row 1, row 2 in two halves (up to and after the centre stitch), repeat (stitch counts), bind off. `PAGES` and `PAGE_VIEWS` in `index.html`.
 - The large size (316) is the default; Simon is knitting it. The size can still be changed on the overview.
 - On a step page the top-left link goes to the pattern's overview ("← Översikt"); on the overview it goes to the pattern list. The overview's big button continues from the last step page ("Fortsätt: …").
