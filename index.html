@@ -15,7 +15,7 @@
 <style>
 :root {
   --bg: #F3F2EF; --surface: #FBFAF8; --ink: #1B1A18; --muted: #7A776F; --line: #DEDCD6;
-  --cover: #2E4FB5; --on-cover: #FFC9D6; --accent: #2E4FB5; --dot: #FFC9D6;
+  --cover: #2B3A5C; --on-cover: #ECE8E1; --accent: #2B3A5C; --dot: #8E9BB5;
   --font: "Google Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
   --ease: cubic-bezier(.2, .8, .2, 1);
   color-scheme: light;
@@ -111,7 +111,7 @@ button.ing .txt::after { content: " ›"; color: var(--muted); }
 .big-btn:active { transform: scale(.97); }
 .big-btn:disabled { opacity: .3; }
 .small-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.warn { margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: #FFE3EA; font-size: 1rem; }
+.warn { margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: #E4E7EE; font-size: 1rem; }
 .warn b { font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
@@ -234,7 +234,7 @@ function checkpoints(n) {
 
 /* ---------- Views ---------- */
 const BACK = `<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>`;
-const YARN = `<svg viewBox="0 0 2048 2048" preserveAspectRatio="xMaxYMid meet" aria-hidden="true"><path d="M1120 1000L1640 480" stroke="#FFC9D6" stroke-width="88" stroke-linecap="round" fill="none"/><circle cx="1665" cy="455" r="108" fill="#FFC9D6"/><path d="M1010 960L1290 350" stroke="#FFC9D6" stroke-width="88" stroke-linecap="round" fill="none"/><circle cx="1305" cy="315" r="108" fill="#FFC9D6"/><path d="M660 1520C540 1640 380 1600 345 1740C315 1860 430 1920 560 1880" stroke="#FFC9D6" stroke-width="80" stroke-linecap="round" fill="none"/><path fill="#FFC9D6" d="M500 1250C470 1000 640 790 900 760C1160 730 1400 880 1440 1140C1480 1390 1340 1620 1100 1690C860 1760 620 1650 545 1460C520 1395 505 1320 500 1250Z"/><path fill="#2E4FB5" d="M760 900C940 905 1130 1020 1230 1230C1250 1272 1196 1300 1172 1262C1080 1110 930 1000 760 970C718 962 718 899 760 900Z"/><path fill="#2E4FB5" d="M640 1110C850 1105 1050 1220 1150 1440C1168 1482 1115 1508 1092 1470C990 1300 830 1200 640 1180C598 1176 598 1111 640 1110Z"/><path fill="#2E4FB5" d="M680 1370C820 1375 950 1450 1020 1570C1042 1608 990 1636 966 1600C905 1510 800 1450 680 1440C638 1436 638 1369 680 1370Z"/></svg>`;
+const YARN = `<svg viewBox="0 0 2048 2048" preserveAspectRatio="xMaxYMid meet" aria-hidden="true"><g fill="none" stroke="#ECE8E1" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"><circle cx="960" cy="1230" r="440"/><path d="M708 870Q1016 1077 1385 1116"/><path d="M535 1116Q902 1388 1359 1416"/><path d="M547 1380Q826 1599 1180 1611"/><path d="M1046 743L1274 232"/><circle cx="1274" cy="232" r="51" fill="#ECE8E1" stroke="none"/><path d="M1350 926L1746 530"/><circle cx="1746" cy="530" r="51" fill="#ECE8E1" stroke="none"/><path d="M532 1477Q442 1677 202 1677"/></g></svg>`;
 
 function home() {
   return `<header class="top-bar gutter"><div class="wrap top"><span class="wordmark">KNIT</span></div></header>
