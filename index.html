@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KNIT</title>
+<meta name="theme-color" content="#F3F2EF">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="KNIT">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #F3F2EF; --surface: #FBFAF8; --ink: #1B1A18; --muted: #7A776F; --line: #DEDCD6;
+  --cover: #2E4FB5; --on-cover: #FFC9D6; --accent: #2E4FB5; --dot: #FFC9D6;
+  --font: "Google Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); }
+body { color: var(--ink); font-family: var(--font); font-size: 18px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+h1, h2, p, ul, ol { margin: 0; padding: 0; list-style: none; }
+.gutter { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 600px; margin-inline: auto; width: 100%; }
+[hidden] { display: none !important; }
+
+/* Top bar */
+.top-bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
+.top { display: flex; align-items: center; justify-content: space-between; min-height: 56px; }
+.wordmark { font: 600 1.15rem/1 var(--font); letter-spacing: .04em; }
+.back { display: flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 500; letter-spacing: .04em; }
+.back svg, .icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Home */
+.home-tiles { display: flex; flex-direction: column; gap: 12px; padding-block: 12px calc(16px + env(safe-area-inset-bottom, 0px)); min-height: calc(100vh - 57px); min-height: calc(100dvh - 57px); }
+.tile { position: relative; flex: 1; min-height: 300px; width: 100%; border-radius: 20px; overflow: hidden; background: var(--cover); color: var(--on-cover); transition: transform .16s var(--ease); }
+.tile:active { transform: scale(.98); }
+.tile svg { position: absolute; top: 3%; right: -4%; height: 78%; width: 104%; }
+.tile-label { position: absolute; left: 20px; bottom: 16px; display: flex; flex-direction: column; }
+.tile-name { font: 600 2.1rem/1.05 var(--font); letter-spacing: .01em; }
+.tile-count { font-size: .95rem; margin-top: 4px; opacity: .85; }
+
+/* Guide page */
+.title { font: 500 clamp(1.7rem, 7.4vw, 2.3rem)/1.2 var(--font); text-wrap: balance; padding-top: 16px; }
+.intro, .plan { color: var(--muted); margin-top: 12px; font-size: 1rem; }
+.label { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.block-label { margin-top: 40px; padding-bottom: 8px; color: var(--accent); }
+.group-label { margin-top: 26px; padding-bottom: 6px; display: flex; align-items: baseline; gap: 10px; }
+.group-label .now { color: var(--accent); font-weight: 600; letter-spacing: .08em; }
+.group-label .now::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: var(--dot); margin-right: .4em; }
+.sub { color: var(--muted); font-size: .95rem; padding-bottom: 6px; }
+
+.chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.chip { min-height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid var(--line); display: inline-flex; align-items: center; font-size: 1.05rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.ing { display: grid; grid-template-columns: 6.2em minmax(0, 1fr); gap: 10px; padding-block: 9px; line-height: 1.35; width: 100%; }
+.ing + .ing { border-top: 1px solid var(--line); }
+.ing .amt { font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ing .more { color: var(--muted); font-size: .9rem; display: block; }
+button.ing .amt { color: var(--accent); }
+button.ing .txt::after { content: " ›"; color: var(--muted); }
+
+.hint { color: var(--muted); font-size: .95rem; padding-bottom: 14px; }
+.steps { display: flex; flex-direction: column; }
+.step { display: grid; grid-template-columns: 1.7em minmax(0, 1fr); gap: 6px; padding-block: 20px; border-top: 1px solid var(--line); cursor: pointer; transition: opacity .15s; }
+.step .no { font-size: .95rem; line-height: 1.9rem; color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+.step .text { font-size: clamp(1.2rem, 5.2vw, 1.4rem); line-height: 1.4; min-width: 0; }
+.step .text b { font-weight: 600; color: var(--accent); }
+.step .aside { display: block; font-size: 1rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+.step.done { opacity: .32; }
+.term { font-weight: 600; color: var(--accent); text-decoration: underline dotted; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.inferred { display: inline-block; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px; margin-top: 8px; }
+
+.note { padding-block: 14px; border-top: 1px solid var(--line); font-size: 1.02rem; }
+.note b { font-weight: 600; }
+.original { margin-top: 10px; padding: 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: .98rem; white-space: pre-line; }
+.foot { color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); margin-top: 40px; padding-block: 12px 120px; }
+
+/* Bottom button, same spot opens and closes the sheet */
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding-top: 12px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, var(--bg) 70%, transparent); pointer-events: none; }
+.dock-btn { pointer-events: auto; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 60px; border-radius: 30px; background: var(--cover); color: var(--on-cover); font-weight: 600; font-size: 1.1rem; text-align: center; transition: transform .16s var(--ease), opacity .16s; }
+.dock-btn:active { transform: scale(.97); opacity: .9; }
+.dock-btn .small { font-weight: 400; opacity: .8; }
+.sheet-open .dock { background: none; }
+
+/* Sheet */
+.sheet-wrap { position: fixed; inset: 0; z-index: 20; background: rgba(10, 10, 8, .4); display: flex; align-items: flex-end; justify-content: center; animation: fade-in .2s ease-out; }
+.sheet { background: var(--surface); width: 100%; max-width: 640px; max-height: 88%; border-radius: 14px 14px 0 0; display: flex; flex-direction: column; animation: sheet-in .32s var(--ease); }
+.sheet-scroll { overflow-y: auto; padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+.sheet-title { font: 500 1.15rem/1.2 var(--font); padding-block: 20px 4px; }
+.sheet .group-label:first-child { margin-top: 8px; }
+.sheet ol.how { counter-reset: n; }
+.sheet ol.how li { counter-increment: n; display: grid; grid-template-columns: 1.7em 1fr; gap: 6px; padding-block: 12px; border-top: 1px solid var(--line); font-size: 1.1rem; }
+.sheet ol.how li::before { content: counter(n); color: var(--accent); font-weight: 600; font-size: .95rem; line-height: 1.6rem; }
+.sheet p { margin-top: 10px; font-size: 1rem; }
+.sheet p.muted { color: var(--muted); }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes sheet-in { from { transform: translateY(100%); } }
+
+/* Counter */
+.counter-row { font: 500 clamp(1.6rem, 7vw, 2rem)/1.15 var(--font); margin-top: 6px; }
+.counter-side { color: var(--muted); font-size: 1rem; margin-top: 4px; }
+.big-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 60px; border-radius: 30px; background: var(--ink); color: var(--bg); font-weight: 600; font-size: 1.1rem; margin-top: 22px; transition: transform .16s var(--ease); }
+.big-btn:active { transform: scale(.97); }
+.big-btn:disabled { opacity: .3; }
+.small-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.warn { margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: #FFE3EA; font-size: 1rem; }
+.warn b { font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet" class="sheet-wrap" hidden></div>
+<div id="dock" class="dock gutter" hidden><div class="wrap"><button class="dock-btn" id="dock-btn"></button></div></div>
+
+<script>
+/* All instructions come from the pattern text Simon pasted. Where the guide adds something the pattern does not say,
+   it is marked "Står inte i mönstret" in the page and explained under Bra att veta. */
+const PATTERN = `Lägg upp 116 (316) maskor
+Markera mitten maskan genom att sätta markörer på varsin sida om den.
+Varv 1 (avigsidan): 2 am, minsk-am-v, am tills 4m kvar, minsk-am-h.
+Varv 2 (rätsidan): 2 rm, minsk-rm-h, rm tills markören, minsk-rm-v, flytta markören, 1rm, flytta markören,
+minsk-rm-h, rm tills 4m kvar, minsk-rm-v.
+Upprepa dessa två varv tills du har ca 6 maskor kvar, maska av.`;
+
+const TERMS = {
+  "rm-h": {
+    name: "minsk-rm-h",
+    what: "En rät minskning: 2 maskor blir 1. Vanligast betyder \"h\" att minskningen lutar åt höger.",
+    how: [
+      "Stick in högra stickan i de 2 första maskorna på vänstra stickan samtidigt, framifrån, som när du stickar rätt.",
+      "Sticka dem rätt som om de vore en enda maska.",
+      "Nu har 2 maskor blivit 1."
+    ]
+  },
+  "rm-v": {
+    name: "minsk-rm-v",
+    what: "En rät minskning: 2 maskor blir 1. Vanligast betyder \"v\" att minskningen lutar åt vänster.",
+    how: [
+      "Lyft 1 maska över till högra stickan som om du skulle sticka den rätt, men sticka den inte.",
+      "Lyft nästa maska på samma sätt.",
+      "Stick in vänstra stickan framifrån i de två lyfta maskorna.",
+      "Sticka ihop dem rätt. Nu har 2 maskor blivit 1."
+    ]
+  },
+  "am-v": { name: "minsk-am-v", purl: true },
+  "am-h": { name: "minsk-am-h", purl: true }
+};
+const PURL_HOW = {
+  a: ["Stick in högra stickan i de 2 första maskorna samtidigt, som när du stickar avigt.", "Sticka dem avigt som en maska. Nu har 2 maskor blivit 1."],
+  b: ["Lyft 1 maska över till högra stickan som om du skulle sticka den rätt. Lyft nästa likadant.", "Flytta tillbaka båda till vänstra stickan.", "Sticka ihop dem avigt genom bakre maskbågen. Nu har 2 maskor blivit 1."]
+};
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("knit-" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("knit-" + k, JSON.stringify(v)); } catch (e) {} }
+};
+
+const S = {
+  view: "home",
+  size: store.get("size", 116),
+  rows: {},          // rows finished, per size
+  ticks: new Set(),  // step ids marked done
+  sheet: null,       // "counter" or a term key
+  resetArmed: false
+};
+S.rows[116] = store.get("rows-116", 0);
+S.rows[316] = store.get("rows-316", 0);
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* Stitch arithmetic, straight from the pattern: row 1 removes 2 (one decrease at each edge),
+   row 2 removes 4 (one at each edge and one on each side of the centre stitch). */
+function count(size, rowsDone) {
+  const pairs = Math.floor(rowsDone / 2);
+  return size - 6 * pairs - (rowsDone % 2 ? 2 : 0);
+}
+const rowsDone = () => S.rows[S.size];
+const currentRow = () => (rowsDone() % 2 === 0 ? 1 : 2);
+const repeatNo = () => Math.floor(rowsDone() / 2) + 1;
+
+function term(key, label) { return `<button class="term" data-term="${key}">${esc(label || TERMS[key].name)}</button>`; }
+
+function stepsData() {
+  const n = S.size, mid = n / 2;
+  return [
+    { id: "prep", label: "Förberedelser", steps: [
+      { id: "p1", text: `Lägg upp <b>${n}</b> maskor.` },
+      { id: "p2", text: `Hitta mittmaskan och sätt en markör på varsin sida om den.`,
+        aside: `${n} är ett jämnt tal, så det finns ingen exakt mitt. Välj till exempel maska nummer ${mid}. Då har ena sidan ${mid - 1} maskor och den andra ${mid}.` }
+    ]},
+    { id: "r1", row: 1, label: "Varv 1 · avigsidan", sub: "Den sida som är vänd mot dig nu är avigsidan.", steps: [
+      { id: "r1a", text: `Sticka <b>2</b> aviga maskor.` },
+      { id: "r1b", text: `Gör ${term("am-v")}. Två maskor blir en.` },
+      { id: "r1c", text: `Sticka avigt tills det är <b>4</b> maskor kvar på vänstra stickan.`, aside: "Flytta över markörerna till högra stickan när du kommer till dem." },
+      { id: "r1d", text: `Gör ${term("am-h")}. Två maskor blir en.` },
+      { id: "r1e", text: `Sticka de <b>2</b> sista maskorna avigt. Vänd arbetet.`, inferred: true }
+    ]},
+    { id: "r2", row: 2, label: "Varv 2 · rätsidan", sub: "Nu är framsidan vänd mot dig.", steps: [
+      { id: "r2a", text: `Sticka <b>2</b> räta maskor.` },
+      { id: "r2b", text: `Gör ${term("rm-h")}.` },
+      { id: "r2c", text: `Sticka rätt tills det är <b>2</b> maskor kvar före den första markören.`, aside: "Mönstret skriver \"rm tills markören\", men minskningen som följer behöver de 2 maskorna närmast markören." },
+      { id: "r2d", text: `Gör ${term("rm-v")} med de 2 maskorna före markören.` },
+      { id: "r2e", text: `Flytta markören till högra stickan.` },
+      { id: "r2f", text: `Sticka <b>1</b> rät maska. Det är mittmaskan.` },
+      { id: "r2g", text: `Flytta markören till högra stickan.` },
+      { id: "r2h", text: `Gör ${term("rm-h")} med de 2 första maskorna efter markören.` },
+      { id: "r2i", text: `Sticka rätt tills det är <b>4</b> maskor kvar.` },
+      { id: "r2j", text: `Gör ${term("rm-v")}.` },
+      { id: "r2k", text: `Sticka de <b>2</b> sista maskorna rätt. Vänd arbetet.`, inferred: true }
+    ]},
+    { id: "end", label: "Upprepa och avsluta", steps: [
+      { id: "e1", text: `Sticka varv 1 och varv 2 om och om igen. Tryck på <b>Varvräknare</b> längst ner efter varje varv.` },
+      { id: "e2", text: `När du har ungefär <b>6</b> maskor kvar: maska av.` }
+    ]}
+  ];
+}
+
+function checkpoints(n) {
+  const out = [];
+  for (const k of [1, 2, 3, 5, 10, 15, 20, 30, 40, 50]) if (n - 6 * k >= 6) out.push([k, n - 6 * k]);
+  return out;
+}
+
+/* ---------- Views ---------- */
+const BACK = `<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>`;
+const YARN = `<svg viewBox="0 0 2048 2048" preserveAspectRatio="xMaxYMid meet" aria-hidden="true"><path d="M1120 1000L1640 480" stroke="#FFC9D6" stroke-width="88" stroke-linecap="round" fill="none"/><circle cx="1665" cy="455" r="108" fill="#FFC9D6"/><path d="M1010 960L1290 350" stroke="#FFC9D6" stroke-width="88" stroke-linecap="round" fill="none"/><circle cx="1305" cy="315" r="108" fill="#FFC9D6"/><path d="M660 1520C540 1640 380 1600 345 1740C315 1860 430 1920 560 1880" stroke="#FFC9D6" stroke-width="80" stroke-linecap="round" fill="none"/><path fill="#FFC9D6" d="M500 1250C470 1000 640 790 900 760C1160 730 1400 880 1440 1140C1480 1390 1340 1620 1100 1690C860 1760 620 1650 545 1460C520 1395 505 1320 500 1250Z"/><path fill="#2E4FB5" d="M760 900C940 905 1130 1020 1230 1230C1250 1272 1196 1300 1172 1262C1080 1110 930 1000 760 970C718 962 718 899 760 900Z"/><path fill="#2E4FB5" d="M640 1110C850 1105 1050 1220 1150 1440C1168 1482 1115 1508 1092 1470C990 1300 830 1200 640 1180C598 1176 598 1111 640 1110Z"/><path fill="#2E4FB5" d="M680 1370C820 1375 950 1450 1020 1570C1042 1608 990 1636 966 1600C905 1510 800 1450 680 1440C638 1436 638 1369 680 1370Z"/></svg>`;
+
+function home() {
+  return `<header class="top-bar gutter"><div class="wrap top"><span class="wordmark">KNIT</span></div></header>
+  <main class="gutter"><div class="wrap home-tiles">
+    <button class="tile" data-go="guide">${YARN}
+      <span class="tile-label"><span class="tile-name">MÖNSTER</span><span class="tile-count">Steg för steg för nybörjare</span></span>
+    </button>
+  </div></main>`;
+}
+
+function guide() {
+  const n = S.size, row = currentRow();
+  const groups = stepsData();
+  let no = 0;
+  const groupHtml = groups.map(g => {
+    const now = g.row === row ? `<span class="now">NU</span>` : "";
+    return `<div class="group-label label" id="g-${g.id}"><span>${esc(g.label)}</span>${now}</div>
+      ${g.sub ? `<p class="sub">${esc(g.sub)}</p>` : ""}
+      <ol class="steps">${g.steps.map(s => { no++; return `
+        <li class="step${S.ticks.has(s.id) ? " done" : ""}" data-step="${s.id}">
+          <span class="no">${no}</span>
+          <span class="text">${s.text}${s.aside ? `<span class="aside">${s.aside}</span>` : ""}${s.inferred ? `<span class="inferred">Står inte i mönstret</span>` : ""}</span>
+        </li>`; }).join("")}</ol>`;
+  }).join("");
+
+  return `<header class="top-bar gutter"><div class="wrap top">
+      <button class="back" data-go="home">${BACK}<span>KNIT</span></button>
+    </div></header>
+  <main class="gutter"><div class="wrap">
+    <h1 class="title">Mönstret, steg för steg</h1>
+    <p class="intro">Hela mönstret är två varv som upprepas. Varje gång du stickat båda varven har du 6 maskor färre.</p>
+    <p class="plan">Lägg upp → markera mitten → varv 1 + varv 2, om och om igen → maska av</p>
+
+    <div class="block-label label">Storlek</div>
+    <div class="chips">${[116, 316].map(v => `<button class="chip" data-size="${v}" aria-pressed="${v === n}">${v} maskor</button>`).join("")}</div>
+
+    <div class="block-label label">Du behöver</div>
+    <div class="ing"><span class="amt">${n}</span><span>maskor att lägga upp</span></div>
+    <div class="ing"><span class="amt">2</span><span>maskmarkörer</span></div>
+    <div class="ing"><span class="amt"></span><span>stickor och garn enligt mönstret</span></div>
+    <div class="ing"><span class="amt"></span><span>gärna en säkerhetsnål att sätta på rätsidan, så du ser vilken sida som är vilken</span></div>
+
+    <div class="block-label label">Ordlista</div>
+    <div class="ing"><span class="amt">m</span><span>maska, maskor</span></div>
+    <div class="ing"><span class="amt">rm</span><span>rätmaska, sticka rätt</span></div>
+    <div class="ing"><span class="amt">am</span><span>avigmaska, sticka avigt</span></div>
+    <div class="ing"><span class="amt">varv</span><span>en rad, från ena kanten till den andra</span></div>
+    <div class="ing"><span class="amt">flytta markören</span><span>lyft över markören från vänstra till högra stickan</span></div>
+    ${Object.keys(TERMS).map(k => `<button class="ing" data-term="${k}"><span class="amt">${TERMS[k].name}</span><span class="txt">minskning, 2 maskor blir 1<span class="more">Tryck för att se hur</span></span></button>`).join("")}
+
+    <div class="block-label label">Metod</div>
+    <p class="hint">Tryck på ett steg när det är klart. Tryck på ett understruket ord för att se hur man gör.</p>
+    ${groupHtml}
+
+    <div class="block-label label">Räkna dina maskor</div>
+    <p class="hint">Så många maskor ska du ha efter att ha stickat båda varven så här många gånger.</p>
+    ${checkpoints(n).map(([k, c]) => `<div class="ing"><span class="amt">${c}</span><span>efter ${k} ${k === 1 ? "gång" : "gånger"}</span></div>`).join("")}
+
+    <div class="block-label label">Bra att veta</div>
+    <p class="note"><b>De 2 sista maskorna.</b> Mönstret slutar varje varv med en minskning när det är 4 maskor kvar. Då finns 2 maskor kvar som mönstret inte nämner. Guiden stickar dem, avigt på varv 1 och rätt på varv 2, så att båda kanterna får 2 maskor. Det är markerat med \"Står inte i mönstret\".</p>
+    <p class="note"><b>-h och -v.</b> Mönstret förklarar inte förkortningarna. Har ditt mönster en förkortningslista gäller den före den här guiden. Alla fyra minskningar tar bort exakt 1 maska, så antalet maskor blir rätt oavsett. Det enda som skiljer är hur minskningen ser ut.</p>
+    <p class="note"><b>Mittmaskan.</b> ${n} är jämnt, så ena sidan av mittmaskan får en maska mer än den andra. Mittmaskan själv minskas aldrig. Markörerna följer med hela vägen.</p>
+    <p class="note"><b>Mot slutet.</b> Mönstret säger \"ca 6 maskor\". När det är få maskor kvar räcker de inte alltid till alla minskningar. Går ett varv inte att sticka som det står, är det dags att maska av.</p>
+
+    <div class="block-label label">Mönstret i original</div>
+    <div class="original">${esc(PATTERN)}</div>
+
+    <p class="foot">Guiden bygger bara på mönstertexten ovan.</p>
+  </div></main>`;
+}
+
+function counterSheet() {
+  const n = S.size, done = rowsDone(), row = currentRow();
+  const now = count(n, done), after = now - (row === 1 ? 2 : 4);
+  const finished = now <= 6;
+  let warn = "";
+  if (finished) warn = `<div class="warn"><b>Dags att maska av.</b> Du har ${now} maskor kvar, och mönstret säger att du ska maska av vid ungefär 6.</div>`;
+  else if (now <= 12) warn = `<div class="warn"><b>Nära slutet.</b> Mönstret säger maska av vid ungefär 6 maskor. Går nästa varv inte att sticka som det står, maska av redan nu.</div>`;
+  return `<div class="sheet-title">Varvräknare</div>
+    <div class="group-label label"><span>Upprepning ${repeatNo()}</span></div>
+    <div class="counter-row">${finished ? "Maska av" : `Varv ${row} · ${row === 1 ? "avigsidan" : "rätsidan"}`}</div>
+    <div class="counter-side">${finished ? "" : row === 1 ? "Minska 1 maska i varje kant." : "Minska i varje kant och på varsin sida om mittmaskan."}</div>
+    <div style="margin-top:14px">
+      <div class="ing"><span class="amt">${now}</span><span>maskor på stickan nu</span></div>
+      ${finished ? "" : `<div class="ing"><span class="amt">${after}</span><span>maskor när varvet är klart</span></div>`}
+      <div class="ing"><span class="amt">${done}</span><span>varv stickade hittills, storlek ${n}</span></div>
+    </div>
+    ${warn}
+    <button class="big-btn" data-count="next" ${finished ? "disabled" : ""}>Varv ${row} klart</button>
+    <div class="small-btns">
+      <button class="chip" data-count="undo" ${done === 0 ? "disabled" : ""}>Ångra ett varv</button>
+      <button class="chip" data-count="reset">${S.resetArmed ? "Tryck igen för att nollställa" : "Nollställ"}</button>
+    </div>`;
+}
+
+function termSheet(key) {
+  const t = TERMS[key];
+  if (!t.purl) {
+    return `<div class="sheet-title">${esc(t.name)}</div>
+      <p class="muted">${esc(t.what)}</p>
+      <ol class="how" style="margin-top:12px">${t.how.map(h => `<li>${esc(h)}</li>`).join("")}</ol>
+      <p class="muted">Står det något annat i ditt mönsters förkortningslista, följ den.</p>`;
+  }
+  return `<div class="sheet-title">${esc(t.name)}</div>
+    <p class="muted">En avig minskning: 2 maskor blir 1. Mönstret säger inte vilken avig minskning \"-v\" och \"-h\" står för. Här är de två vanliga. Kolla ditt mönsters förkortningslista om det finns en.</p>
+    <div class="group-label label"><span>A · 2 aviga tillsammans</span></div>
+    <ol class="how">${PURL_HOW.a.map(h => `<li>${esc(h)}</li>`).join("")}</ol>
+    <div class="group-label label"><span>B · lyft, lyft, avigt bakre maskbågen</span></div>
+    <ol class="how">${PURL_HOW.b.map(h => `<li>${esc(h)}</li>`).join("")}</ol>
+    <p class="muted">Osäker? Båda tar bort exakt 1 maska, så maskantalet blir rätt med vilken som helst. A är enklast. Det som skiljer är bara hur kanten ser ut.</p>`;
+}
+
+/* ---------- Render ---------- */
+function render() {
+  const app = $("#app");
+  app.innerHTML = S.view === "home" ? home() : guide();
+  const dock = $("#dock");
+  dock.hidden = S.view !== "guide";
+  if (S.view === "guide") {
+    const btn = $("#dock-btn");
+    if (S.sheet) btn.innerHTML = "Stäng";
+    else {
+      const finished = count(S.size, rowsDone()) <= 6;
+      btn.innerHTML = finished ? `Varvräknare <span class="small">· maska av</span>` : `Varvräknare <span class="small">· varv ${currentRow()}, ${count(S.size, rowsDone())} maskor</span>`;
+    }
+  }
+  renderSheet();
+}
+function renderSheet() {
+  const w = $("#sheet");
+  document.body.classList.toggle("sheet-open", !!S.sheet);
+  if (!S.sheet) { w.hidden = true; w.innerHTML = ""; return; }
+  const body = S.sheet === "counter" ? counterSheet() : termSheet(S.sheet);
+  const wasOpen = !w.hidden;
+  w.hidden = false;
+  w.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-scroll gutter"><div class="wrap">${body}</div></div></div>`;
+  if (wasOpen) { w.style.animation = "none"; w.firstChild.style.animation = "none"; } else { w.style.animation = ""; }
+}
+
+function setRows(v) {
+  S.rows[S.size] = Math.max(0, v);
+  store.set("rows-" + S.size, S.rows[S.size]);
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-term],[data-go],[data-size],[data-step],[data-count],#dock-btn,#sheet");
+  if (!t) return;
+
+  if (t.dataset.term) { e.stopPropagation(); S.sheet = t.dataset.term; S.resetArmed = false; render(); return; }
+  if (t.dataset.go) { S.view = t.dataset.go; S.sheet = null; render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.size) { S.size = Number(t.dataset.size); store.set("size", S.size); S.ticks.clear(); render(); return; }
+  if (t.dataset.step) { const id = t.dataset.step; S.ticks.has(id) ? S.ticks.delete(id) : S.ticks.add(id); t.classList.toggle("done"); return; }
+  if (t.dataset.count) {
+    const a = t.dataset.count;
+    if (a === "next") {
+      const finishedRow = currentRow();
+      setRows(rowsDone() + 1);
+      for (const id of [...S.ticks]) if (id.startsWith("r" + finishedRow)) S.ticks.delete(id);
+      S.resetArmed = false;
+    } else if (a === "undo") { setRows(rowsDone() - 1); S.resetArmed = false; }
+    else if (a === "reset") {
+      if (S.resetArmed) { setRows(0); S.resetArmed = false; for (const id of [...S.ticks]) if (id[0] === "r") S.ticks.delete(id); }
+      else S.resetArmed = true;
+    }
+    render(); return;
+  }
+  if (t.id === "dock-btn") { S.sheet = S.sheet ? null : "counter"; S.resetArmed = false; render(); return; }
+  if (t.id === "sheet" && e.target === t) { S.sheet = null; render(); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && S.sheet) { S.sheet = null; render(); } });
+
+render();
+</script>
+</body>
+</html>
