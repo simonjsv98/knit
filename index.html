@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>KNIT</title>
+<script>try { const p = JSON.parse(sessionStorage.getItem("updateWipe")); if (p){ document.documentElement.classList.add("wipe-hold"); document.documentElement.style.setProperty("--wipe-top",p[2]+"px"); } } catch(e){}</script>
 <meta name="theme-color" content="#F3F2EF">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="KNIT">
@@ -13,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap">
 <style>
+/* Same build as RECIPES: fixed top bar, one scrolling area per page, sheets from the bottom, a fixed button at the bottom. */
 :root {
   --bg: #F3F2EF; --surface: #FBFAF8; --ink: #1B1A18; --muted: #7A776F; --line: #DEDCD6;
   --cover: #4A2212; --on-cover: #F9E27D; --accent: #4A2212; --dot: #F2C94C;
@@ -21,115 +23,168 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); }
-body { color: var(--ink); font-family: var(--font); font-size: 18px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
+html, body { height: 100%; margin: 0; }
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 18px; line-height: 1.45; overflow: hidden; -webkit-text-size-adjust: 100%; }
+#app { position: relative; z-index: 1; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 h1, h2, p, ul, ol { margin: 0; padding: 0; list-style: none; }
 .gutter { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
 .wrap { max-width: 600px; margin-inline: auto; width: 100%; }
 [hidden] { display: none !important; }
+.view { height: 100%; display: flex; flex-direction: column; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; }
 
-/* Top bar */
-.top-bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
-.top { display: flex; align-items: center; justify-content: space-between; min-height: 56px; }
+/* Top bar: back link to the left, update or home in the middle, the glossary to the right */
+.top-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 2; padding-top: env(safe-area-inset-top, 0px); background: #F3F2EF; border-bottom: 1px solid var(--line); }
+.top-bar + .scroll { margin-top: calc(57px + env(safe-area-inset-top, 0px)); }
+.top { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; min-height: 56px; }
+.top > :last-child { justify-self: end; }
 .wordmark { font: 600 1.15rem/1 var(--font); letter-spacing: .04em; }
-.back { display: flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 500; letter-spacing: .04em; }
-.back svg, .icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.link { min-height: 44px; display: flex; align-items: center; min-width: 0; font-weight: 500; }
+.link span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.top-link { min-height: 44px; display: flex; align-items: center; font-weight: 500; color: var(--accent); }
+.icon-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+.icon-btn svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+/* iOS 26 blurs the top edge of home screen apps unless a fixed, opaque, full-width element sits there. */
+body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: max(env(safe-area-inset-top, 0px), 2px); background: #F3F2EF; z-index: 30; }
 
-/* Home */
-.home-tiles { display: flex; flex-direction: column; gap: 12px; padding-block: 12px calc(16px + env(safe-area-inset-bottom, 0px)); min-height: calc(100vh - 57px); min-height: calc(100dvh - 57px); }
-.tile { position: relative; flex: 1; min-height: 300px; width: 100%; border-radius: 20px; overflow: hidden; background: var(--cover); color: var(--on-cover); transition: transform .16s var(--ease); }
+/* Start page: one colour tile */
+.home-scroll { display: flex; }
+.home-tiles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding-block: 12px calc(16px + env(safe-area-inset-bottom, 0px)); max-width: 900px; margin-inline: auto; }
+.tile { position: relative; flex: 1; min-height: 240px; width: 100%; border-radius: 20px; overflow: hidden; background: var(--cover); color: var(--on-cover); transition: transform .16s var(--ease); }
 .tile:active { transform: scale(.98); }
 .tile svg { position: absolute; top: 3%; right: -4%; height: 78%; width: 104%; }
 .tile-label { position: absolute; left: 20px; bottom: 16px; display: flex; flex-direction: column; }
 .tile-name { font: 600 2.1rem/1.05 var(--font); letter-spacing: .01em; }
 .tile-count { font-size: .95rem; margin-top: 4px; opacity: .85; }
 
-/* Guide page */
+/* Pattern list, like a section page in RECIPES */
+.home-title { font: 500 1.9rem/1.2 var(--font); padding-block: 16px 32px; color: var(--accent); }
+.home-title::after { content: ""; display: inline-block; width: .42em; height: .42em; margin-left: .3em; border-radius: 50%; background: var(--dot); vertical-align: .08em; }
+.patterns button { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; width: 100%; padding-block: 16px; border-top: 1px solid var(--line); font-size: 1.15rem; line-height: 1.3; transition: opacity .12s; }
+.patterns li:last-child > * { border-bottom: 1px solid var(--line); }
+.patterns .hit { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.patterns .where { font-size: .85rem; color: var(--muted); }
+.patterns .mark { color: var(--accent); flex: none; transition: transform .2s var(--ease); }
+.patterns button:active { opacity: .45; }
+@media (hover: hover) { .patterns button:hover .mark { transform: translateX(3px); } }
+.more-soon { color: var(--muted); font-size: .95rem; padding-block: 14px 40px; }
+
+/* Guide pages */
 .title { font: 500 clamp(1.7rem, 7.4vw, 2.3rem)/1.2 var(--font); text-wrap: balance; padding-top: 16px; }
 .intro { color: var(--muted); margin-top: 12px; font-size: 1rem; }
 .intro b { color: var(--ink); font-weight: 600; }
 .page { padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
-.top-link { min-height: 44px; display: flex; align-items: center; font-weight: 500; letter-spacing: .04em; color: var(--accent); }
+.label { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.block-label { margin-top: 40px; padding-bottom: 8px; color: var(--accent); }
+.hint { color: var(--muted); font-size: .95rem; padding-bottom: 14px; }
+.group-label { margin-top: 26px; padding-bottom: 6px; display: flex; align-items: baseline; gap: 10px; }
 
 /* Progress through the pages: one segment per stage */
 .progress { display: flex; gap: 4px; padding-top: 16px; }
-.progress span { flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
+.progress span { flex: 1; height: 4px; border-radius: 2px; background: var(--line); transition: background .3s var(--ease); }
 .progress span.on { background: var(--accent); }
 .eyebrow { margin-top: 18px; color: var(--accent); }
 .eyebrow + .title { padding-top: 6px; }
 
-/* Where you are in the counting, opens the row counter */
-.status { display: block; width: 100%; margin-top: 18px; padding: 12px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 1rem; line-height: 1.4; }
-.status b { font-weight: 600; color: var(--accent); }
-.status-top { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .9rem; }
-.status-main { display: block; margin-top: 2px; }
-.status + .steps, .status + .warn { margin-top: 8px; }
-
-/* Overview of the stages on the start page */
-.plan-list li + li { border-top: 1px solid var(--line); }
-.plan-list button { display: grid; grid-template-columns: 1.7em minmax(0, 1fr) auto; gap: 6px; align-items: baseline; width: 100%; padding-block: 12px; font-size: 1.1rem; }
-.plan-list .no { color: var(--accent); font-weight: 600; font-size: .95rem; }
-.plan-list button::after { content: "›"; color: var(--muted); }
-.ing.current .amt, .ing.current span { color: var(--accent); font-weight: 600; }
-.label { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.block-label { margin-top: 40px; padding-bottom: 8px; color: var(--accent); }
-.group-label { margin-top: 26px; padding-bottom: 6px; display: flex; align-items: baseline; gap: 10px; }
-.group-label .now { color: var(--accent); font-weight: 600; letter-spacing: .08em; }
-.group-label .now::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: var(--dot); margin-right: .4em; }
-.sub { color: var(--muted); font-size: .95rem; padding-bottom: 6px; }
-
 .chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.chip { min-height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid var(--line); display: inline-flex; align-items: center; font-size: 1.05rem; }
+.chip { min-height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid var(--line); display: inline-flex; align-items: center; font-size: 1.05rem; transition: transform .16s var(--ease), background .16s, color .16s; }
+.chip:active { transform: scale(.96); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip:disabled { opacity: .35; }
 
 .ing { display: grid; grid-template-columns: 6.2em minmax(0, 1fr); gap: 10px; padding-block: 9px; line-height: 1.35; width: 100%; }
 .ing + .ing { border-top: 1px solid var(--line); }
 .ing .amt { font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .ing .more { color: var(--muted); font-size: .9rem; display: block; }
+.ing .more::after { content: " ›"; }
+button.ing { transition: opacity .12s; }
+button.ing:active { opacity: .45; }
 button.ing .amt { color: var(--accent); }
-button.ing .more::after { content: " ›"; }
+.ing.current .amt, .ing.current span { color: var(--accent); font-weight: 600; }
 
-.hint { color: var(--muted); font-size: .95rem; padding-bottom: 14px; }
+/* Overview of the stages on the start page */
+.plan-list li + li { border-top: 1px solid var(--line); }
+.plan-list button { display: grid; grid-template-columns: 1.7em minmax(0, 1fr) auto; gap: 6px; align-items: baseline; width: 100%; padding-block: 12px; font-size: 1.1rem; transition: opacity .12s; }
+.plan-list button:active { opacity: .45; }
+.plan-list .no { color: var(--accent); font-weight: 600; font-size: .95rem; }
+.plan-list button::after { content: "›"; color: var(--accent); }
+
 .steps { display: flex; flex-direction: column; }
 .step { display: grid; grid-template-columns: 1.7em minmax(0, 1fr); gap: 6px; padding-block: 20px; border-top: 1px solid var(--line); cursor: pointer; transition: opacity .15s; }
 .step .no { font-size: .95rem; line-height: 1.9rem; color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
-.step .text { font-size: clamp(1.2rem, 5.2vw, 1.4rem); line-height: 1.4; min-width: 0; }
+.step .text { font-size: clamp(1.2rem, 5.2vw, 1.4rem); line-height: 1.4; min-width: 0; transition: opacity .12s; }
+.step:active .text { opacity: .6; }
 .step .text b { font-weight: 600; color: var(--accent); }
 .step .aside { display: block; font-size: 1rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
 .step.done { opacity: .32; }
 .term { font-weight: 600; color: var(--accent); text-decoration: underline dotted; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .inferred { display: inline-block; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px; margin-top: 8px; }
 
+/* Where you are in the counting, opens the row counter */
+.status { display: block; width: 100%; margin-top: 18px; padding: 12px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 1rem; line-height: 1.4; transition: transform .16s var(--ease); }
+.status:active { transform: scale(.98); }
+.status b { font-weight: 600; color: var(--accent); }
+.status-top { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .9rem; }
+.status-main { display: block; margin-top: 2px; }
+
+/* Row diagram: the parts of the row in the order you knit them, numbered like the steps below */
+.diagram { margin-top: 20px; padding: 14px 12px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.diagram-cap { color: var(--muted); font-size: .85rem; margin-bottom: 10px; }
+.strip { display: flex; gap: 3px; align-items: flex-start; }
+.seg { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: none; transition: opacity .2s; }
+.seg.grow { flex: 1 1 0; min-width: 0; align-items: stretch; }
+.seg-blocks { display: flex; gap: 3px; height: 34px; width: 100%; justify-content: center; transition: opacity .2s; }
+.b { height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+.b-st, .b-run { border: 1.5px solid var(--accent); color: var(--accent); background: var(--bg); }
+.b-st { width: 22px; }
+.b-run { flex: 1 1 0; min-width: 30px; padding: 0 4px; }
+.b-dec { width: 31px; font-size: .72rem; letter-spacing: -.02em; background: var(--cover); color: var(--on-cover); }
+.b-mid { min-width: 24px; padding: 0 5px; border-radius: 13px; background: var(--dot); color: var(--ink); }
+.b-mk { width: 4px; margin: 0 3px; border-radius: 2px; background: var(--ink); }
+.seg .n { height: 22px; font-size: .78rem; font-weight: 600; color: var(--accent); text-align: center; font-variant-numeric: tabular-nums; }
+.seg .n span { display: inline-block; min-width: 22px; height: 22px; line-height: 22px; border-radius: 11px; transition: background .2s, color .2s; }
+.seg.off { opacity: .3; }
+.seg.done .seg-blocks, .seg.done .n { opacity: .32; }
+.seg.now .n span { background: var(--dot); color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: .82rem; color: var(--muted); }
+.legend i { display: inline-block; width: 13px; height: 13px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
+.legend .l-st { border: 1.5px solid var(--accent); }
+.legend .l-dec { background: var(--cover); }
+.legend .l-mid { background: var(--dot); border-radius: 50%; }
+.legend .l-mk { width: 4px; background: var(--ink); border-radius: 2px; }
+
 .note { padding-block: 14px; border-top: 1px solid var(--line); font-size: 1.02rem; }
 .note b { font-weight: 600; }
-.original { margin-top: 10px; padding: 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: .98rem; white-space: pre-line; }
+.original { margin-top: 10px; padding: 16px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); font-size: .98rem; white-space: pre-line; }
+.warn { margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: #FBF1C9; font-size: 1rem; }
+.warn b { font-weight: 600; }
 
-/* Bottom button, same spot opens and closes the sheet */
-.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding-top: 12px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, var(--bg) 70%, transparent); pointer-events: none; }
+/* Bottom bar: back and the next action */
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding-top: 12px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, var(--bg) 70%, transparent); pointer-events: none; }
 .dock-row { display: flex; gap: 10px; }
 .dock-back { pointer-events: auto; flex: 0 0 60px; height: 60px; border-radius: 30px; background: var(--surface); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; transition: transform .16s var(--ease); }
 .dock-back:active { transform: scale(.94); }
 .dock-back svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.dock-btn { pointer-events: auto; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 60px; border-radius: 30px; background: var(--cover); color: var(--on-cover); font-weight: 600; font-size: 1.1rem; text-align: center; transition: transform .16s var(--ease), opacity .16s; }
-.dock-btn:active { transform: scale(.97); opacity: .9; }
-.dock-btn .small { font-weight: 400; opacity: .8; }
-.sheet-open .dock { background: none; }
+.big { pointer-events: auto; flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 60px; border-radius: 30px; background: var(--cover); color: var(--on-cover); font-weight: 600; font-size: 1.1rem; text-align: center; transition: transform .16s var(--ease), opacity .16s; }
+.big:active { transform: scale(.97); opacity: .88; }
+.big.dark { background: var(--ink); color: var(--bg); }
+.big:disabled { opacity: .3; }
 
 /* Sheet */
-.sheet-wrap { position: fixed; inset: 0; z-index: 20; background: rgba(10, 10, 8, .4); display: flex; align-items: flex-end; justify-content: center; animation: fade-in .2s ease-out; }
-.sheet { background: var(--surface); width: 100%; max-width: 640px; max-height: 88%; border-radius: 14px 14px 0 0; display: flex; flex-direction: column; animation: sheet-in .32s var(--ease); }
-.sheet-scroll { overflow-y: auto; padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+.sheet-wrap { position: fixed; inset: 0; z-index: 20; background: rgba(10, 10, 8, .4); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--surface); width: 100%; max-width: 640px; max-height: 88%; border-radius: 14px 14px 0 0; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.sheet .scroll { padding-bottom: 12px; }
 .sheet-title { font: 500 1.15rem/1.2 var(--font); padding-block: 20px 4px; }
+.sheet-foot { padding-top: 12px; padding-bottom: 16px; }
 .sheet .group-label:first-child { margin-top: 8px; }
 .sheet ol.how { counter-reset: n; }
 .sheet ol.how li { counter-increment: n; display: grid; grid-template-columns: 1.7em 1fr; gap: 6px; padding-block: 12px; border-top: 1px solid var(--line); font-size: 1.1rem; }
 .sheet ol.how li::before { content: counter(n); color: var(--accent); font-weight: 600; font-size: .95rem; line-height: 1.6rem; }
 .sheet p { margin-top: 10px; font-size: 1rem; }
 .sheet p.muted { color: var(--muted); }
-@keyframes fade-in { from { opacity: 0; } }
-@keyframes sheet-in { from { transform: translateY(100%); } }
 
 /* Counter */
 .counter-row { font: 500 clamp(1.6rem, 7vw, 2rem)/1.15 var(--font); margin-top: 6px; }
@@ -138,16 +193,38 @@ button.ing .more::after { content: " ›"; }
 .big-btn:active { transform: scale(.97); }
 .big-btn:disabled { opacity: .3; }
 .small-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.warn { margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: #FBF1C9; font-size: 1rem; }
-.warn b { font-weight: 600; }
+
+/* Motion, as in RECIPES: short, one curve. Page changes swap at once with a short fade; no sliding pages, which stutter on phones. */
+.settled, .settled * { animation: none !important; }
+#app, #app * { touch-action: pan-y pinch-zoom; }
+.enter-f > .scroll, .enter-b > .scroll { animation: page-in .16s ease-out; }
+@keyframes page-in { from { opacity: 0; } }
+.sheet-wrap { animation: fade-in .2s ease-out; }
+.sheet { animation: sheet-in .32s var(--ease); }
+.sheet-wrap.closing { animation: fade-out .2s ease-in forwards; }
+.sheet-wrap.closing .sheet { animation: sheet-out .2s ease-in forwards; }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes sheet-in { from { transform: translateY(100%); } }
+@keyframes sheet-out { to { transform: translateY(100%); } }
+/* Update: a yellow circle grows from the button, and shrinks back into it once the new version has loaded. The hold covers the reload itself. */
+.update-wipe { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #4A2212; font-size: 1.7rem; font-weight: 500; letter-spacing: .02em; }
+.update-wipe b { position: absolute; border-radius: 50%; background: #F9E27D; will-change: transform; }
+.update-wipe span { position: relative; }
+html.wipe-hold::after { content: "KNIT"; position: fixed; left: 0; right: 0; bottom: 0; top: var(--wipe-top, 0px); z-index: 29; background: #F9E27D; color: #4A2212; display: flex; align-items: center; justify-content: center; font: 500 1.7rem "Google Sans", -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: .02em; }
+.icon-btn.updating svg { animation: update-spin .8s linear infinite; }
+@keyframes update-spin { to { transform: rotate(360deg); } }
+/* Swipe back: the current page lifts off and follows the finger, the previous page waits underneath. */
+.swipe-top { position: fixed; inset: 0; z-index: 5; background: var(--bg); display: flex; flex-direction: column; will-change: transform; pointer-events: none; }
+.swipe-top::before { content: ""; position: absolute; top: 0; bottom: 0; left: -14px; width: 14px; background: linear-gradient(to left, rgba(20, 18, 10, .14), transparent); }
+#app.swiping { will-change: transform; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app" class="view"></div>
 <div id="sheet" class="sheet-wrap" hidden></div>
-<div id="dock" class="dock gutter" hidden><div class="wrap dock-row"><button class="dock-back" id="dock-back" aria-label="Tillbaka"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="dock-btn" id="dock-btn"></button></div></div>
 
 <script>
 /* All instructions come from the pattern text Simon pasted. Where the guide adds something the pattern does not say,
@@ -187,24 +264,50 @@ const PURL_HOW = {
   b: ["Lyft 1 maska över till högra stickan som om du skulle sticka den rätt. Lyft nästa likadant.", "Flytta tillbaka båda till vänstra stickan.", "Sticka ihop dem avigt genom bakre maskbågen. Nu har 2 maskor blivit 1."]
 };
 
+
+/* The patterns on the list page. Each pattern keeps its own progress, saved under its id.
+   Only the first has a guide so far; a new pattern gets an entry here and its own pages. */
+const PATTERNS = [
+  { id: "monster-1", title: "Första mönstret", sub: "116 eller 316 maskor · två varv som upprepas" }
+];
+
 const store = {
   get(k, d) { try { const v = localStorage.getItem("knit-" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem("knit-" + k, JSON.stringify(v)); } catch (e) {} }
 };
+// Progress saved before there was a pattern list belongs to the first pattern.
+try {
+  for (const k of ["size", "rows-116", "rows-316", "page"]) {
+    const old = localStorage.getItem("knit-" + k), key = "knit-monster-1-" + k;
+    if (old !== null && localStorage.getItem(key) === null) localStorage.setItem(key, old);
+    localStorage.removeItem("knit-" + k);
+  }
+} catch (e) {}
 
 const S = {
-  view: "home",
-  size: store.get("size", 116),
+  view: "home",      // "home", "list" or "guide"
+  pattern: null,
+  size: 116,
   rows: {},          // rows finished, per size
   ticks: new Set(),  // step ids marked done
-  page: store.get("page", "start"), // which page of the guide is open
+  page: "start",     // which page of the guide is open
   sheet: null,       // "counter", "ref" or a term key
   resetArmed: false
 };
-S.rows[116] = store.get("rows-116", 0);
-S.rows[316] = store.get("rows-316", 0);
+const pget = (k, d) => store.get(S.pattern + "-" + k, d);
+const pset = (k, v) => store.set(S.pattern + "-" + k, v);
+function openPattern(id) {
+  S.pattern = id;
+  S.size = pget("size", 116);
+  S.rows = { 116: pget("rows-116", 0), 316: pget("rows-316", 0) };
+  S.page = pget("page", "start");
+  if (!PAGES.includes(S.page)) S.page = "start";
+  S.ticks = new Set(pget("ticks", []));
+}
+const saveTicks = () => pset("ticks", [...S.ticks]);
 
 const $ = s => document.querySelector(s);
+const app = $("#app"), sheet = $("#sheet");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 /* Stitch arithmetic, straight from the pattern: row 1 removes 2 (one decrease at each edge),
@@ -226,31 +329,99 @@ function checkpoints(n) {
 }
 
 /* ---------- Views ---------- */
-const BACK = `<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>`;
 const YARN = `<svg viewBox="0 0 2048 2048" preserveAspectRatio="xMaxYMid meet" aria-hidden="true"><path d="M1120 1000L1640 480" stroke="#F9E27D" stroke-width="88" stroke-linecap="round" fill="none"/><circle cx="1665" cy="455" r="108" fill="#F9E27D"/><path d="M1010 960L1290 350" stroke="#F9E27D" stroke-width="88" stroke-linecap="round" fill="none"/><circle cx="1305" cy="315" r="108" fill="#F9E27D"/><path d="M660 1520C540 1640 380 1600 345 1740C315 1860 430 1920 560 1880" stroke="#F9E27D" stroke-width="80" stroke-linecap="round" fill="none"/><path fill="#F9E27D" d="M500 1250C470 1000 640 790 900 760C1160 730 1400 880 1440 1140C1480 1390 1340 1620 1100 1690C860 1760 620 1650 545 1460C520 1395 505 1320 500 1250Z"/><path fill="#4A2212" d="M760 900C940 905 1130 1020 1230 1230C1250 1272 1196 1300 1172 1262C1080 1110 930 1000 760 970C718 962 718 899 760 900Z"/><path fill="#4A2212" d="M640 1110C850 1105 1050 1220 1150 1440C1168 1482 1115 1508 1092 1470C990 1300 830 1200 640 1180C598 1176 598 1111 640 1110Z"/><path fill="#4A2212" d="M680 1370C820 1375 950 1450 1020 1570C1042 1608 990 1636 966 1600C905 1510 800 1450 680 1440C638 1436 638 1369 680 1370Z"/></svg>`;
+const ICON = {
+  update: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.3l1.7-1.8"/><path d="M20 20v-4.5h-4.5"/></svg>`,
+  home: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h12V9.5"/></svg>`,
+  back: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>`
+};
+const navBar = (label, attr, right = "<span></span>") => `<div class="gutter top-bar"><div class="wrap top">
+    <button class="link" ${attr}><span>← ${label}</span></button>
+    <button class="icon-btn" data-go="home" aria-label="Till startsidan">${ICON.home}</button>
+    ${right}
+  </div></div>`;
 
 function home() {
-  return `<header class="top-bar gutter"><div class="wrap top"><span class="wordmark">KNIT</span></div></header>
-  <main class="gutter"><div class="wrap home-tiles">
-    <button class="tile" data-go="guide">${YARN}
-      <span class="tile-label"><span class="tile-name">MÖNSTER</span><span class="tile-count">Steg för steg för nybörjare</span></span>
-    </button>
-  </div></main>`;
+  return `<div class="gutter top-bar"><div class="wrap top" style="max-width:900px">
+      <span class="wordmark">KNIT</span>
+      <button class="icon-btn" data-app-update aria-label="Uppdatera appen">${ICON.update}</button>
+      <span></span>
+    </div></div>
+    <div class="scroll gutter home-scroll"><div class="home-tiles">
+      <button class="tile" data-go="list">${YARN}
+        <span class="tile-label"><span class="tile-name">MÖNSTER</span><span class="tile-count">${PATTERNS.length} ${PATTERNS.length === 1 ? "mönster" : "mönster"}</span></span>
+      </button>
+    </div></div>`;
+}
+
+function list() {
+  return `${navBar("KNIT", `data-go="home"`)}
+    <div class="scroll gutter"><div class="wrap">
+      <h1 class="home-title">Mönster</h1>
+      <ul class="patterns">${PATTERNS.map(p => `<li><button data-pattern="${p.id}"><span class="hit"><span>${esc(p.title)}</span><span class="where">${esc(p.sub)}</span></span><span class="mark">›</span></button></li>`).join("")}</ul>
+      <p class="more-soon">Fler mönster hamnar här.</p>
+    </div></div>`;
 }
 
 /* The guide is split into pages, one stage each. Start is the overview; the rest show in the progress bar. */
 const PAGES = ["start", "cast", "mark", "r1", "r2a", "r2b", "loop", "end"];
 const ROW_PAGES = ["r1", "r2a", "r2b", "loop"];
-if (!PAGES.includes(S.page)) S.page = "start";
 
 const finished = () => count(S.size, rowsDone()) <= 6;
 
 function stepList(steps) {
   return `<ol class="steps">${steps.map((s, i) => `
-    <li class="step${S.ticks.has(s.id) ? " done" : ""}" data-step="${s.id}">
+    <li class="step${S.ticks.has(s.id) ? " done" : ""}" data-step="${s.id}" role="button" tabindex="0" aria-pressed="${S.ticks.has(s.id)}">
       <span class="no">${i + 1}</span>
       <span class="text">${s.text}${s.aside ? `<span class="aside">${s.aside}</span>` : ""}${s.inferred ? `<span class="inferred">Står inte i mönstret</span>` : ""}</span>
     </li>`).join("")}</ol>`;
+}
+
+/* Row diagrams. Each group is one step: its id, then its blocks.
+   st: a few stitches, run: "knit until", dec: a decrease (2 stitches become 1), mid: the centre stitch, mk: a marker.
+   Row 1 purls straight past the markers and the centre stitch, so they sit inside step 3.
+   The diagram shows the order you knit in, not left and right on the needle. */
+const ROW1 = [
+  ["r1a", [["st", "2"]]],
+  ["r1b", [["dec", "2→1"]]],
+  ["r1c", [["run", "…"], ["mk"], ["mid", "1"], ["mk"], ["run", "…"]]],
+  ["r1d", [["dec", "2→1"]]],
+  ["r1e", [["st", "2"]]]
+];
+const ROW2 = [
+  ["r2a", [["st", "2"]]],
+  ["r2b", [["dec", "2→1"]]],
+  ["r2c", [["run", "…"]]],
+  ["r2d", [["dec", "2→1"]]],
+  ["r2e", [["mk"]]],
+  ["r2f", [["mid", "1"]]],
+  ["r2g", [["mk"]]],
+  ["r2h", [["dec", "2→1"]]],
+  ["r2i", [["run", "…"]]],
+  ["r2j", [["dec", "2→1"]]],
+  ["r2k", [["st", "2"]]]
+];
+const block = ([k, l]) => `<span class="b b-${k}">${l || ""}</span>`;
+const legend = plain => `<div class="legend"><span><i class="l-st"></i>${plain} maskor</span><span><i class="l-dec"></i>minskning, 2 blir 1</span><span><i class="l-mid"></i>mittmaskan</span><span><i class="l-mk"></i>markör</span></div>`;
+function rowDiagram(groups, active, plain, caption) {
+  let n = 0;
+  const segs = groups.map(([id, blocks]) => {
+    const on = active.includes(id);
+    const grow = blocks.some(b => b[0] === "run");
+    return `<div class="seg${on ? "" : " off"}${grow ? " grow" : ""}"${on ? ` data-for="${id}"` : ""}>
+      <div class="seg-blocks">${blocks.map(block).join("")}</div>
+      <span class="n">${on ? `<span>${++n}</span>` : ""}</span>
+    </div>`;
+  }).join("");
+  return `<div class="diagram" aria-hidden="true"><p class="diagram-cap">${caption}</p><div class="strip">${segs}</div>${legend(plain)}</div>`;
+}
+// Done steps fade in the diagram too, and the next step to do is marked.
+function refreshDiagram() {
+  const next = [...app.querySelectorAll(".step")].map(el => el.dataset.step).find(id => !S.ticks.has(id));
+  app.querySelectorAll(".seg[data-for]").forEach(g => {
+    g.classList.toggle("done", S.ticks.has(g.dataset.for));
+    g.classList.toggle("now", g.dataset.for === next);
+  });
 }
 
 const NOTES = {
@@ -287,6 +458,7 @@ function endWarning() {
   return "";
 }
 
+const ROW2_FIRST = ["r2a", "r2b", "r2c", "r2d", "r2e", "r2f", "r2g"], ROW2_SECOND = ["r2h", "r2i", "r2j", "r2k"];
 const PAGE_VIEWS = {
   start() {
     const n = S.size;
@@ -322,7 +494,16 @@ const PAGE_VIEWS = {
 
   mark() {
     const n = S.size, mid = n / 2;
+    // Counted from the end you start counting at: mid - 1 stitches, the centre stitch, then n - mid stitches.
+    const diagram = `<div class="diagram" aria-hidden="true"><p class="diagram-cap">Så sitter markörerna, räknat från kanten där du började räkna</p>
+      <div class="strip">
+        <div class="seg grow"><div class="seg-blocks">${block(["run", `${mid - 1} maskor`])}</div></div>
+        <div class="seg"><div class="seg-blocks">${block(["mk"])}${block(["mid", `nr ${mid}`])}${block(["mk"])}</div></div>
+        <div class="seg grow"><div class="seg-blocks">${block(["run", `${n - mid} maskor`])}</div></div>
+      </div>
+      <div class="legend"><span><i class="l-mid"></i>mittmaskan</span><span><i class="l-mk"></i>markör</span></div></div>`;
     return pageHead("Förberedelser", "Markera mittmaskan", "Mönstret minskar på båda sidor om en mittmaska. Markörerna visar var den är.") +
+      diagram +
       stepList([
         { id: "p2", text: `Räkna fram till maska nummer <b>${mid}</b>. Det är mittmaskan.`,
           aside: `${n} är ett jämnt tal, så det finns ingen exakt mitt. Med maska ${mid} har ena sidan ${mid - 1} maskor och den andra ${n - mid}.` },
@@ -333,10 +514,11 @@ const PAGE_VIEWS = {
   r1() {
     return pageHead("Varv 1 · avigsidan", "Sticka varv 1", "Den sida som är vänd mot dig nu är avigsidan. På det här varvet minskar du 1 maska i varje kant.") +
       status() +
+      rowDiagram(ROW1, ROW1.map(g => g[0]), "aviga", "Hela varvet i den ordning du stickar det →") +
       stepList([
         { id: "r1a", text: `Sticka <b>2</b> aviga maskor.` },
         { id: "r1b", text: `Gör ${term("am-v")}. Två maskor blir en.` },
-        { id: "r1c", text: `Sticka avigt tills det är <b>4</b> maskor kvar på vänstra stickan.`, aside: "Flytta över markörerna till högra stickan när du kommer till dem." },
+        { id: "r1c", text: `Sticka avigt tills det är <b>4</b> maskor kvar på vänstra stickan.`, aside: "Flytta över markörerna till högra stickan när du kommer till dem. Mittmaskan stickas avigt som de andra." },
         { id: "r1d", text: `Gör ${term("am-h")}. Två maskor blir en.` },
         { id: "r1e", text: `Sticka de <b>2</b> sista maskorna avigt. Vänd arbetet.`, inferred: true }
       ]) + notes(["last2", "hv"]);
@@ -345,6 +527,7 @@ const PAGE_VIEWS = {
   r2a() {
     return pageHead("Varv 2 · rätsidan · del 1 av 2", "Fram till mittmaskan", "Nu är framsidan vänd mot dig. Varv 2 minskar i båda kanterna och på varsin sida om mittmaskan. Här är första halvan.") +
       status() +
+      rowDiagram(ROW2, ROW2_FIRST, "räta", "Hela varvet i den ordning du stickar det →") +
       stepList([
         { id: "r2a", text: `Sticka <b>2</b> räta maskor.` },
         { id: "r2b", text: `Gör ${term("rm-h")}. Två maskor blir en.` },
@@ -359,6 +542,7 @@ const PAGE_VIEWS = {
   r2b() {
     return pageHead("Varv 2 · rätsidan · del 2 av 2", "Efter mittmaskan", "Fortsätt på samma varv, direkt efter den andra markören.") +
       status() +
+      rowDiagram(ROW2, ROW2_SECOND, "räta", "Hela varvet i den ordning du stickar det →") +
       stepList([
         { id: "r2h", text: `Gör ${term("rm-h")} med de 2 första maskorna efter markören.` },
         { id: "r2i", text: `Sticka rätt tills det är <b>4</b> maskor kvar.` },
@@ -370,12 +554,14 @@ const PAGE_VIEWS = {
   loop() {
     const n = S.size, done = rowsDone(), pairs = Math.floor(done / 2), now = count(n, done);
     const title = pairs === 0 ? "Upprepa varv 1 och 2" : `Båda varven klara ${pairs} ${pairs === 1 ? "gång" : "gånger"}`;
+    const intro = finished()
+      ? `Nu ska du ha <b>${now}</b> maskor på stickan. Det är dags att maska av.`
+      : `Nu ska du ha <b>${now}</b> maskor på stickan. Sticka varv 1 och varv 2 om och om igen tills det är ungefär 6 maskor kvar.`;
     const early = !finished() && now <= 12 ? `<div class="chips"><button class="chip" data-page="end">Maska av nu</button></div>` : "";
-    const intro = finished() ? `Nu ska du ha <b>${now}</b> maskor på stickan. Det är dags att maska av.` : `Nu ska du ha <b>${now}</b> maskor på stickan. Sticka varv 1 och varv 2 om och om igen tills det är ungefär 6 maskor kvar.`;
     return pageHead("Upprepa", title, intro) +
       status() + endWarning() + early +
       `<div class="block-label label">Räkna dina maskor</div>
-      <p class="hint">Så många maskor ska du ha efter att ha stickat båda varven så här många gånger.</p>
+      <p class="hint">Så många maskor ska du ha efter att ha stickat båda varven så här många gånger. Varv 1 tar bort 2 maskor och varv 2 tar bort 4.</p>
       ${checkpoints(n).map(([k, c]) => `<div class="ing${k === pairs ? " current" : ""}"><span class="amt">${c}</span><span>efter ${k} ${k === 1 ? "gång" : "gånger"}${k === pairs ? " · du är här" : ""}</span></div>`).join("")}`;
   },
 
@@ -385,45 +571,13 @@ const PAGE_VIEWS = {
   }
 };
 
-/* What the big button at the bottom does on each page. Finishing a row also moves the row counter on,
-   but only if the counter is on that row, so stepping back and forward never counts a row twice. */
-function finishRow(r) {
-  if (currentRow() !== r || finished()) return;
-  setRows(rowsDone() + 1);
-  for (const id of [...S.ticks]) if (id.startsWith("r" + r)) S.ticks.delete(id);
-}
-const NEXT = {
-  start: ["Börja: lägg upp", () => go("cast")],
-  cast: ["Nästa: markera mitten", () => go("mark")],
-  mark: ["Nästa: varv 1", () => go("r1")],
-  r1: ["Varv 1 klart", () => { finishRow(1); go("r2a"); }],
-  r2a: ["Nästa: andra halvan", () => go("r2b")],
-  r2b: ["Varv 2 klart", () => { finishRow(2); go("loop"); }],
-  loop: () => finished() ? ["Nästa: maska av", () => go("end")] : ["Sticka varv 1 igen", () => go("r1")],
-  end: ["Klar", () => { S.view = "home"; render(); window.scrollTo(0, 0); }]
-};
-const nextAction = () => typeof NEXT[S.page] === "function" ? NEXT[S.page]() : NEXT[S.page];
-const PREV = { cast: "start", mark: "cast", r1: () => rowsDone() >= 2 ? "loop" : "mark", r2a: "r1", r2b: "r2a", loop: "r2b", end: "loop" };
-const prevPage = () => typeof PREV[S.page] === "function" ? PREV[S.page]() : PREV[S.page];
-
-function go(page) {
-  S.page = page; store.set("page", page); S.sheet = null;
-  render(); window.scrollTo(0, 0);
-}
-
-/* After the row counter changes, a knitting page follows it to the row you are on. */
-function followCounter() {
-  if (!ROW_PAGES.includes(S.page)) return;
-  S.page = finished() ? "loop" : currentRow() === 1 ? "r1" : "r2a";
-  store.set("page", S.page);
-}
-
 function guide() {
-  return `<header class="top-bar gutter"><div class="wrap top">
-      <button class="back" data-go="home">${BACK}<span>KNIT</span></button>
-      <button class="top-link" data-sheet="ref">Ordlista</button>
-    </div></header>
-  <main class="gutter page"><div class="wrap">${PAGE_VIEWS[S.page]()}</div></main>`;
+  return `${navBar("Mönster", `data-go="list"`, `<button class="top-link" data-sheet="ref">Ordlista</button>`)}
+    <div class="scroll gutter page"><div class="wrap">${PAGE_VIEWS[S.page]()}</div></div>
+    <div class="dock gutter"><div class="wrap dock-row">
+      ${prevPage() ? `<button class="dock-back" data-prev aria-label="Tillbaka">${ICON.back}</button>` : ""}
+      <button class="big" data-next>${nextAction()[0]}</button>
+    </div></div>`;
 }
 
 function refSheet() {
@@ -481,67 +635,332 @@ function termSheet(key) {
     <p class="muted">Osäker? Båda tar bort exakt 1 maska, så maskantalet blir rätt med vilken som helst. A är enklast. Det som skiljer är bara hur kanten ser ut.</p>`;
 }
 
-/* ---------- Render ---------- */
-function render() {
-  const app = $("#app");
-  app.innerHTML = S.view === "home" ? home() : guide();
-  const dock = $("#dock");
-  dock.hidden = S.view !== "guide";
-  if (S.view === "guide") {
-    const btn = $("#dock-btn"), back = $("#dock-back");
-    btn.textContent = S.sheet ? "Stäng" : nextAction()[0];
-    back.hidden = !!S.sheet || !prevPage();
-  }
-  renderSheet();
+/* ---------- Navigation ---------- */
+/* What the big button at the bottom does on each page. Finishing a row also moves the row counter on,
+   but only if the counter is on that row, so stepping back and forward never counts a row twice. */
+function finishRow(r) {
+  if (currentRow() !== r || finished()) return;
+  setRows(rowsDone() + 1);
+  for (const id of [...S.ticks]) if (id.startsWith("r" + r)) S.ticks.delete(id);
+  saveTicks();
 }
-function renderSheet() {
-  const w = $("#sheet");
-  document.body.classList.toggle("sheet-open", !!S.sheet);
-  if (!S.sheet) { w.hidden = true; w.innerHTML = ""; return; }
-  const body = S.sheet === "counter" ? counterSheet() : S.sheet === "ref" ? refSheet() : termSheet(S.sheet);
-  const wasOpen = !w.hidden;
-  w.hidden = false;
-  w.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-scroll gutter"><div class="wrap">${body}</div></div></div>`;
-  if (wasOpen) { w.style.animation = "none"; w.firstChild.style.animation = "none"; } else { w.style.animation = ""; }
+const NEXT = {
+  start: ["Börja: lägg upp", () => go("cast")],
+  cast: ["Nästa: markera mitten", () => go("mark")],
+  mark: ["Nästa: varv 1", () => go("r1")],
+  r1: ["Varv 1 klart", () => { finishRow(1); go("r2a"); }],
+  r2a: ["Nästa: andra halvan", () => go("r2b")],
+  r2b: ["Varv 2 klart", () => { finishRow(2); go("loop"); }],
+  loop: () => finished() ? ["Nästa: maska av", () => go("end")] : ["Sticka varv 1 igen", () => go("r1")],
+  end: ["Klar", () => show("list", "b")]
+};
+const nextAction = () => typeof NEXT[S.page] === "function" ? NEXT[S.page]() : NEXT[S.page];
+const PREV = { cast: "start", mark: "cast", r1: () => rowsDone() >= 2 ? "loop" : "mark", r2a: "r1", r2b: "r2a", loop: "r2b", end: "loop" };
+const prevPage = () => typeof PREV[S.page] === "function" ? PREV[S.page]() : PREV[S.page];
+
+const setPage = page => { S.page = page; pset("page", page); };
+function go(page) {
+  const dir = PAGES.indexOf(page) < PAGES.indexOf(S.page) ? "b" : "f";
+  transition(dir, () => setPage(page));
+}
+const DEPTH = { home: 0, list: 1, guide: 2 };
+function show(view, dir) {
+  transition(dir || (DEPTH[view] < DEPTH[S.view] ? "b" : "f"), () => { S.view = view; });
+}
+
+/* After the row counter changes, a knitting page follows it to the row you are on. */
+function followCounter() {
+  if (S.view !== "guide" || !ROW_PAGES.includes(S.page)) return;
+  setPage(finished() ? "loop" : currentRow() === 1 ? "r1" : "r2a");
 }
 
 function setRows(v) {
   S.rows[S.size] = Math.max(0, v);
-  store.set("rows-" + S.size, S.rows[S.size]);
+  pset("rows-" + S.size, S.rows[S.size]);
+}
+
+/* ---------- Render ---------- */
+function draw() {
+  app.innerHTML = S.view === "home" ? home() : S.view === "list" ? list() : guide();
+  if (S.view === "guide") { refreshDiagram(); requestWake(); } else releaseWake();
+}
+
+const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Ends entrance animations on a timer, so content is never left invisible if the browser stalls them.
+let settleTimer = null;
+function settleApp() {
+  clearTimeout(settleTimer);
+  settleTimer = setTimeout(() => { app.classList.remove("enter-f", "enter-b"); app.classList.add("settled"); }, 550);
+}
+// Swaps to the new page at once and fades it in. dir is "f" (deeper or onward) or "b" (back).
+function transition(dir, change) {
+  app.classList.remove("enter-f", "enter-b", "settled");
+  change();
+  draw();
+  if (reducedMotion()) return;
+  void app.offsetWidth;
+  app.classList.add("enter-" + dir);
+  settleApp();
+}
+
+/* ---------- Sheet ---------- */
+function sheetBody() {
+  return S.sheet === "counter" ? counterSheet() : S.sheet === "ref" ? refSheet() : termSheet(S.sheet);
+}
+let sheetTimer = null;
+function openSheet(kind) {
+  const wasOpen = !sheet.hidden && !sheet.classList.contains("closing");
+  S.sheet = kind; S.resetArmed = false;
+  sheet.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">
+    <div class="scroll gutter"><div class="wrap">${sheetBody()}</div></div>
+    <div class="sheet-foot gutter"><div class="wrap"><button class="big" data-close>Stäng</button></div></div>
+  </div>`;
+  if (wasOpen) return;
+  clearTimeout(sheetTimer);
+  sheet.classList.remove("closing", "settled");
+  sheet.hidden = false;
+  sheetTimer = setTimeout(() => sheet.classList.add("settled"), 400);
+}
+// Redraws the open sheet in place, keeping its scroll position.
+function refreshSheet() {
+  const sc = sheet.querySelector(".scroll"), top = sc ? sc.scrollTop : 0;
+  sheet.querySelector(".scroll .wrap").innerHTML = sheetBody();
+  sheet.querySelector(".scroll").scrollTop = top;
+}
+function closeSheet() {
+  if (sheet.hidden) return;
+  S.sheet = null; S.resetArmed = false;
+  clearTimeout(sheetTimer);
+  sheet.classList.remove("settled");
+  sheet.classList.add("closing");
+  sheetTimer = setTimeout(() => { sheet.hidden = true; sheet.innerHTML = ""; sheet.classList.remove("closing"); }, reducedMotion() ? 0 : 200);
+}
+
+/* ---------- Keep the screen on while knitting, where the browser allows it ---------- */
+let wakeLock = null;
+async function requestWake() {
+  if (wakeLock || !("wakeLock" in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request("screen");
+    wakeLock.addEventListener("release", () => { wakeLock = null; });
+  } catch (e) {}
+}
+function releaseWake() { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && S.view === "guide") requestWake(); });
+
+/* ---------- Taps ---------- */
+function toggleStep(el) {
+  const id = el.dataset.step;
+  S.ticks.has(id) ? S.ticks.delete(id) : S.ticks.add(id);
+  el.classList.toggle("done", S.ticks.has(id));
+  el.setAttribute("aria-pressed", S.ticks.has(id));
+  saveTicks();
+  refreshDiagram();
 }
 
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-term],[data-sheet],[data-go],[data-page],[data-size],[data-step],[data-count],#dock-btn,#dock-back,#sheet");
+  if (e.target === sheet) return closeSheet();
+  const termEl = e.target.closest("[data-term]");
+  if (termEl) { e.stopPropagation(); return openSheet(termEl.dataset.term); }
+  const stepEl = e.target.closest("[data-step]");
+  if (stepEl) return toggleStep(stepEl);
+  const t = e.target.closest("button");
   if (!t) return;
-
-  if (t.dataset.term) { e.stopPropagation(); S.sheet = t.dataset.term; S.resetArmed = false; render(); return; }
-  if (t.dataset.sheet) { S.sheet = t.dataset.sheet; S.resetArmed = false; render(); return; }
-  if (t.dataset.go) { S.view = t.dataset.go; S.sheet = null; render(); window.scrollTo(0, 0); return; }
-  if (t.dataset.page) { go(t.dataset.page); return; }
-  if (t.dataset.size) { S.size = Number(t.dataset.size); store.set("size", S.size); S.ticks.clear(); render(); return; }
-  if (t.dataset.step) { const id = t.dataset.step; S.ticks.has(id) ? S.ticks.delete(id) : S.ticks.add(id); t.classList.toggle("done"); return; }
-  if (t.dataset.count) {
-    const a = t.dataset.count;
+  const d = t.dataset;
+  if ("appUpdate" in d) return updateApp(t);
+  if (d.go) return show(d.go);
+  if (d.pattern) { openPattern(d.pattern); return show("guide", "f"); }
+  if (d.page) return go(d.page);
+  if ("next" in d) return nextAction()[1]();
+  if ("prev" in d) { const p = prevPage(); if (p) go(p); return; }
+  if (d.sheet) return openSheet(d.sheet);
+  if ("close" in d) return closeSheet();
+  if (d.size) { S.size = Number(d.size); pset("size", S.size); S.ticks.clear(); saveTicks(); return draw(); }
+  if (d.count) {
+    const a = d.count;
     if (a === "next") {
       const finishedRow = currentRow();
       setRows(rowsDone() + 1);
       for (const id of [...S.ticks]) if (id.startsWith("r" + finishedRow)) S.ticks.delete(id);
+      saveTicks();
       S.resetArmed = false;
     } else if (a === "undo") { setRows(rowsDone() - 1); S.resetArmed = false; }
     else if (a === "reset") {
-      if (S.resetArmed) { setRows(0); S.resetArmed = false; for (const id of [...S.ticks]) if (id[0] === "r") S.ticks.delete(id); }
+      if (S.resetArmed) { setRows(0); S.resetArmed = false; for (const id of [...S.ticks]) if (id[0] === "r") S.ticks.delete(id); saveTicks(); }
       else S.resetArmed = true;
     }
-    if (a !== "reset" || !S.resetArmed) followCounter();
-    render(); return;
+    if (a !== "reset" || !S.resetArmed) { followCounter(); draw(); }
+    refreshSheet();
   }
-  if (t.id === "dock-btn") { if (S.sheet) { S.sheet = null; render(); } else nextAction()[1](); return; }
-  if (t.id === "dock-back") { const p = prevPage(); if (p) go(p); return; }
-  if (t.id === "sheet" && e.target === t) { S.sheet = null; render(); }
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && S.sheet) { S.sheet = null; render(); } });
+document.addEventListener("keydown", e => {
+  if (!sheet.hidden && e.key === "Escape") return closeSheet();
+  const stepEl = e.target.closest && e.target.closest("[data-step]");
+  if (stepEl && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggleStep(stepEl); }
+});
 
-render();
+/* ---------- Update: fetch the newest version past the browser's cache, then reload ---------- */
+// If there's no connection the app stays as it is.
+function updateWipe(x, y, opening) {
+  const wipe = document.createElement("div");
+  wipe.className = "update-wipe";
+  // Starts below the header, so the header and the status bar above it stay as they are.
+  const bar = app.querySelector(".top-bar");
+  const top = bar ? Math.round(bar.getBoundingClientRect().bottom) : 0;
+  wipe.style.top = `${top}px`;
+  const r = Math.ceil(Math.hypot(innerWidth, innerHeight));
+  const circle = document.createElement("b");
+  circle.style.cssText = `left:${x - r}px;top:${y - top - r}px;width:${r * 2}px;height:${r * 2}px;transform:scale(${opening ? 1 : 0})`;
+  const word = document.createElement("span");
+  word.textContent = "KNIT";
+  word.style.opacity = opening ? 1 : 0;
+  wipe.append(circle, word);
+  document.body.appendChild(wipe);
+  const ease = "cubic-bezier(.65,0,.35,1)";
+  const scales = [{ transform: "scale(0)" }, { transform: "scale(1)" }], fades = [{ opacity: 0 }, { opacity: 1 }];
+  circle.animate(opening ? scales : [...scales].reverse(), { duration: opening ? 420 : 380, easing: ease });
+  word.animate(opening ? fades : [...fades].reverse(), opening ? { duration: 200, delay: 140, fill: "backwards" } : { duration: 140 });
+  return wipe;
+}
+function closeWipe(x, y) {
+  const closing = updateWipe(x, y, false);
+  setTimeout(() => closing.remove(), 400);
+}
+async function updateApp(button) {
+  button.classList.add("updating");
+  button.disabled = true;
+  const box = button.getBoundingClientRect(), x = Math.round(box.left + box.width / 2), y = Math.round(box.top + box.height / 2);
+  const motion = !reducedMotion();
+  const wipe = motion ? updateWipe(x, y, true) : null;
+  try {
+    if (motion) await new Promise(done => setTimeout(done, 520));
+    const files = [location.href.split("#")[0], "apple-touch-icon.png"];
+    await Promise.all(files.map(url => fetch(url, { cache: "reload" }).then(res => { if (!res.ok) throw new Error(url); })));
+    if (motion) try { sessionStorage.setItem("updateWipe", JSON.stringify([x, y, Math.round(app.querySelector(".top-bar").getBoundingClientRect().bottom)])); } catch (e) {}
+    location.reload();
+  } catch (e) {
+    if (wipe) { wipe.remove(); closeWipe(x, y); }
+    button.classList.remove("updating");
+    button.disabled = false;
+  }
+}
+
+/* ---------- Swipe right to go back, as on iOS ---------- */
+// The previous page sits underneath from the first movement. The current page follows the finger
+// and the one below drifts in at a slower pace. In the guide, back is the previous step.
+const canGoBack = () => S.view !== "home";
+function stepBack() {
+  if (S.view === "guide" && prevPage()) setPage(prevPage());
+  else S.view = S.view === "guide" ? "list" : "home";
+  draw();
+}
+const PARALLAX = .28;
+let swipe = null, swallowClick = false, swipeTop = null, swipeState = null, swipeBusy = false;
+function liftPage() {
+  swipeState = { view: S.view, page: S.page };
+  clearTimeout(settleTimer);
+  app.classList.remove("enter-f", "enter-b");
+  app.classList.add("settled", "swiping");
+  swipeTop = document.createElement("div");
+  swipeTop.className = "view swipe-top";
+  const scrolls = [...app.querySelectorAll(".scroll")].map(el => el.scrollTop);
+  while (app.firstChild) swipeTop.appendChild(app.firstChild);
+  document.body.appendChild(swipeTop);
+  swipeTop.querySelectorAll(".scroll").forEach((el, i) => { el.scrollTop = scrolls[i]; });
+  stepBack();
+}
+function moveSwipe(dx) {
+  swipeTop.style.transform = `translateX(${dx}px)`;
+  app.style.transform = `translateX(${-(1 - dx / innerWidth) * PARALLAX * 100}%)`;
+}
+function finishSwipe(commit, dx) {
+  const top = swipeTop, state = swipeState;
+  swipeTop = null; swipeState = null;
+  const remaining = commit ? innerWidth - dx : dx;
+  const ms = Math.round(Math.max(120, Math.min(260, remaining / innerWidth * 320)));
+  const curve = `${ms}ms cubic-bezier(.2,.8,.2,1)`;
+  top.style.transition = `transform ${curve}`;
+  app.style.transition = `transform ${curve}`;
+  void top.offsetWidth;
+  top.style.transform = commit ? "translateX(100%)" : "translateX(0)";
+  app.style.transform = commit ? "translateX(0)" : `translateX(${-PARALLAX * 100}%)`;
+  swipeBusy = true;
+  setTimeout(() => {
+    if (!commit) {
+      S.view = state.view;
+      if (state.view === "guide") setPage(state.page);
+      const scrolls = [...top.querySelectorAll(".scroll")].map(el => el.scrollTop);
+      app.innerHTML = "";
+      while (top.firstChild) app.appendChild(top.firstChild);
+      app.querySelectorAll(".scroll").forEach((el, i) => { el.scrollTop = scrolls[i]; });
+      if (S.view === "guide") requestWake();
+    }
+    top.remove();
+    app.style.transition = app.style.transform = "";
+    app.classList.remove("swiping");
+    swipeBusy = false;
+  }, ms + 20);
+}
+document.addEventListener("touchstart", e => {
+  swipe = null;
+  if (swipeBusy || e.touches.length !== 1 || !sheet.hidden || !canGoBack()) return;
+  const t = e.touches[0];
+  swipe = { x: t.clientX, y: t.clientY, dx: 0, active: false, lastX: t.clientX, lastTime: Date.now(), speed: 0 };
+}, { passive: true });
+document.addEventListener("touchmove", e => {
+  if (!swipe) return;
+  const t = e.touches[0], dx = t.clientX - swipe.x, dy = t.clientY - swipe.y;
+  if (!swipe.active) {
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    if (dx <= 0 || Math.abs(dy) >= dx) { swipe = null; return; }
+    swipe.active = true;
+    swipe.x = t.clientX;
+    liftPage();
+  }
+  swipe.dx = Math.max(0, t.clientX - swipe.x);
+  const now = Date.now();
+  if (now > swipe.lastTime) swipe.speed = (t.clientX - swipe.lastX) / (now - swipe.lastTime);
+  swipe.lastX = t.clientX; swipe.lastTime = now;
+  moveSwipe(swipe.dx);
+}, { passive: true });
+function endSwipe(cancelled) {
+  if (!swipe || !swipe.active) { swipe = null; return; }
+  const { dx } = swipe, speed = Date.now() - swipe.lastTime > 80 ? 0 : swipe.speed;
+  swipe = null;
+  swallowClick = true;
+  setTimeout(() => { swallowClick = false; }, 300);
+  // Where the page would end up from its current speed decides the outcome, so a quick flick counts.
+  finishSwipe(!cancelled && dx + speed * 180 > innerWidth * .5, dx);
+}
+document.addEventListener("touchend", () => endSwipe(false), { passive: true });
+document.addEventListener("touchcancel", () => endSwipe(true), { passive: true });
+document.addEventListener("click", e => {
+  if (swallowClick) { e.stopPropagation(); e.preventDefault(); swallowClick = false; }
+}, true);
+
+/* ---------- Start ---------- */
+draw();
+settleApp();
+try {
+  const point = JSON.parse(sessionStorage.getItem("updateWipe"));
+  sessionStorage.removeItem("updateWipe");
+  if (point) {
+    // Starts shrinking only when the new page is done loading and drawing, so nothing competes with the motion.
+    let started = false;
+    const begin = () => {
+      if (started) return;
+      started = true;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        closeWipe(point[0], point[1]);
+        document.documentElement.classList.remove("wipe-hold");
+      }));
+    };
+    const ready = document.fonts ? document.fonts.ready : Promise.resolve();
+    addEventListener("load", () => ready.then(begin));
+    setTimeout(begin, 1200);
+    setTimeout(() => document.documentElement.classList.remove("wipe-hold"), 1600);
+  }
+} catch (e) {}
 </script>
 </body>
 </html>
