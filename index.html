@@ -267,9 +267,12 @@ const PURL_HOW = {
 
 /* The patterns on the list page. Each pattern keeps its own progress, saved under its id.
    Only the first has a guide so far; a new pattern gets an entry here and its own pages. */
+// The sizes on offer. 116 is from the pattern; 317 replaces the pattern's 316 (one stitch more, so there is a true centre stitch).
+const SIZES = [116, 317];
+const OWN_SIZE = { 317: 316 };   // sizes that differ from the pattern, and the pattern's size they replace
 const PATTERNS = [
   // The id stays "monster-1" so saved progress is kept.
-  { id: "monster-1", title: "Ingrid Scarf", sub: "316 eller 116 maskor · två varv som upprepas" }
+  { id: "monster-1", title: "Ingrid Scarf", sub: "317 eller 116 maskor · två varv som upprepas" }
 ];
 
 const store = {
@@ -306,8 +309,16 @@ function openPattern(id) {
     if (pget("size", 116) === 116 && pget("rows-316", 0) === 0 && pget("rows-116", 0) > 0) pset("rows-316", pget("rows-116", 0));
     pset("size", 316); pset("large-from-now", true);
   }
-  S.size = pget("size", 316);
-  S.rows = { 116: pget("rows-116", 0), 316: pget("rows-316", 0) };
+  // Simon changed the large size from the pattern's 316 to 317 on 2026-10-31, for a true centre stitch.
+  // Rows counted on 316 carry over to 317; each row takes the same stitches, so the row count still holds.
+  if (!pget("317-from-now", false)) {
+    if (pget("rows-317", 0) === 0 && pget("rows-316", 0) > 0) pset("rows-317", pget("rows-316", 0));
+    if (pget("size", 317) === 316) pset("size", 317);
+    pset("317-from-now", true);
+  }
+  S.size = pget("size", 317);
+  if (!SIZES.includes(S.size)) S.size = 317;
+  S.rows = Object.fromEntries(SIZES.map(v => [v, pget("rows-" + v, 0)]));
   S.page = pget("page", "start");
   if (!PAGES.includes(S.page)) S.page = "start";
   S.last = pget("last", null);   // the last step page, so the overview can continue from it
@@ -381,8 +392,8 @@ const ROW_PAGES = ["r1", "r2a", "r2b", "loop"];
 
 /* How far the pattern goes, as written. Row 1 takes 1 stitch from each side of the centre stitch and needs 4 there
    (2 stitches and a decrease). Row 2 takes 2 from each side and needs 6 (2 stitches, the edge decrease and the one at
-   the marker). An even cast-on gives sides of n/2 - 1 and n/2, so the smaller side decides. */
-const minSide = (n, done) => n / 2 - 1 - 3 * Math.floor(done / 2) - (done % 2);
+   the marker). An even cast-on gives sides of n/2 - 1 and n/2, an odd one two equal sides; the smaller side decides. */
+const minSide = (n, done) => Math.floor((n - 1) / 2) - 3 * Math.floor(done / 2) - (done % 2);
 const canKnit = (n, done) => minSide(n, done) >= (done % 2 === 0 ? 4 : 6);
 const rowsLeft = (n, done) => { let k = 0; while (canKnit(n, done + k) && count(n, done + k) > 6) k++; return k; };
 const lastCount = n => count(n, rowsLeft(n, 0));
@@ -447,7 +458,8 @@ const NOTES = {
   last2: () => `<p class="note"><b>De 2 sista maskorna.</b> Mönstret slutar varje varv med en minskning när det är 4 maskor kvar. Då finns 2 maskor kvar som mönstret inte nämner. Guiden stickar dem, avigt på varv 1 och rätt på varv 2, så att båda kanterna får 2 maskor. Det är markerat med "Står inte i mönstret".</p>`,
   hv: () => `<p class="note"><b>-h och -v.</b> Mönstret förklarar inte förkortningarna. Har ditt mönster en förkortningslista gäller den före den här guiden. Alla fyra minskningar tar bort exakt 1 maska, så antalet maskor blir rätt oavsett. Det enda som skiljer är hur minskningen ser ut.</p>`,
   marker: () => `<p class="note"><b>Före markören.</b> Mönstret skriver "rm tills markören, minsk-rm-v, flytta markören". Minskningen kommer före markören flyttas, så den måste göras med de 2 maskorna närmast före markören. Därför stickar guiden rätt tills det är 2 maskor kvar före markören. Maskantalet blir detsamma.</p>`,
-  mid: () => `<p class="note"><b>Mittmaskan.</b> ${S.size} är jämnt, så ena sidan av mittmaskan får en maska mer än den andra. Mittmaskan själv minskas aldrig. Markörerna följer med hela vägen.</p>`,
+  mid: () => `<p class="note"><b>Mittmaskan.</b> ${S.size % 2 ? `${S.size} är udda, så det blir lika många maskor på varje sida om mittmaskan.` : `${S.size} är jämnt, så ena sidan av mittmaskan får en maska mer än den andra.`} Mittmaskan själv minskas aldrig. Markörerna följer med hela vägen.</p>`,
+  size: () => `<p class="note"><b>317 maskor.</b> Mönstret säger 316. Med 316 får ena sidan om mittmaskan 157 maskor och den andra 158. Med 317 blir det 158 på varje sida. Varven stickas precis som mönstret säger, och varje varv tar bort lika många maskor. Varje maskantal blir 1 högre än med 316, och mönstret tar slut vid ${lastCount(317)} maskor i stället för ${lastCount(316)}.</p>`,
   end: () => `<p class="note"><b>Mot slutet.</b> Mönstret säger "ca 6 maskor". Varv 1 behöver minst 4 maskor på varje sida om mittmaskan och varv 2 minst 6, annars får minskningarna inte plats. Med ${S.size} maskor går det sista varvet att sticka när du har ${lastCount(S.size)} maskor kvar, efter ${rowsLeft(S.size, 0)} varv. Guiden säger till när det är dags att maska av.</p>`
 };
 const notes = keys => `<div class="block-label label">Bra att veta</div>${keys.map(k => NOTES[k]()).join("")}`;
@@ -494,7 +506,8 @@ const PAGE_VIEWS = {
       <p class="intro">Hela mönstret är två varv som upprepas. Varje gång du stickat båda varven har du 6 maskor färre. Guiden tar ett moment i taget.</p>
 
       <div class="block-label label">Storlek</div>
-      <div class="chips">${[116, 316].map(v => `<button class="chip" data-size="${v}" aria-pressed="${v === n}">${v} maskor</button>`).join("")}</div>
+      <div class="chips">${SIZES.map(v => `<button class="chip" data-size="${v}" aria-pressed="${v === n}">${v} maskor</button>`).join("")}</div>
+      ${OWN_SIZE[n] ? `<p class="hint" style="margin-top:10px">Mönstret säger ${OWN_SIZE[n]}. ${n} ger en maska till, så att mittmaskan hamnar exakt i mitten. <span class="inferred">Står inte i mönstret</span></p>` : ""}
 
       <div class="block-label label">Så går det till</div>
       <ol class="plan-list">${plan.map(([p, t], i) => `<li><button data-page="${p}"><span class="no">${i + 1}</span><span class="txt">${esc(t)}</span></button></li>`).join("")}</ol>
@@ -509,12 +522,13 @@ const PAGE_VIEWS = {
 
   cast() {
     return pageHead("Förberedelser", "Lägg upp maskor") +
-      stepList([{ id: "p1", text: `Lägg upp <b>${S.size}</b> maskor.` }]);
+      stepList([{ id: "p1", text: `Lägg upp <b>${S.size}</b> maskor.`, aside: OWN_SIZE[S.size] ? `Mönstret säger ${OWN_SIZE[S.size]}. Med ${S.size} blir det lika många maskor på varje sida om mittmaskan.` : "", inferred: !!OWN_SIZE[S.size] }]) + (OWN_SIZE[S.size] ? notes(["size"]) : "");
   },
 
   mark() {
-    const n = S.size, mid = n / 2;
+    const n = S.size, mid = Math.ceil(n / 2), odd = n % 2 === 1;
     // Counted from the end you start counting at: mid - 1 stitches, the centre stitch, then n - mid stitches.
+    // Odd: equal sides. Even: one side gets a stitch more.
     const diagram = `<div class="diagram" aria-hidden="true"><p class="diagram-cap">Så sitter markörerna, räknat från kanten där du började räkna</p>
       <div class="strip">
         <div class="seg grow"><div class="seg-blocks">${block(["run", `${mid - 1} maskor`])}</div></div>
@@ -526,7 +540,7 @@ const PAGE_VIEWS = {
       diagram +
       stepList([
         { id: "p2", text: `Räkna fram till maska nummer <b>${mid}</b>. Det är mittmaskan.`,
-          aside: `${n} är ett jämnt tal, så det finns ingen exakt mitt. Med maska ${mid} har ena sidan ${mid - 1} maskor och den andra ${n - mid}.`, inferred: true },
+          aside: odd ? `${n} är ett udda tal, så mittmaskan är exakt i mitten: ${mid - 1} maskor på varje sida.` : `${n} är ett jämnt tal, så det finns ingen exakt mitt. Med maska ${mid} har ena sidan ${mid - 1} maskor och den andra ${n - mid}.`, inferred: !odd },
         { id: "p3", text: `Sätt en markör på varsin sida om mittmaskan, en före och en efter.` }
       ]) + notes(["mid"]);
   },
@@ -613,7 +627,7 @@ function refSheet() {
     <div class="ing"><span class="amt">varv</span><span>en rad, från ena kanten till den andra</span></div>
     <div class="ing"><span class="amt">flytta markören</span><span>lyft över markören från vänstra till högra stickan</span></div>
     ${Object.keys(TERMS).map(k => `<button class="ing" data-term="${k}"><span class="amt">${TERMS[k].name}</span><span class="txt">minskning, 2 maskor blir 1<span class="more">Tryck för att se hur</span></span></button>`).join("")}
-    ${notes(["last2", "marker", "hv", "mid", "end"])}
+    ${notes(["last2", "marker", "hv", "mid", "size", "end"])}
     <div class="block-label label">Mönstret i original</div>
     <div class="original">${esc(PATTERN)}</div>
     <p class="hint" style="margin-top:12px">Guiden bygger bara på mönstertexten ovan.</p>`;
