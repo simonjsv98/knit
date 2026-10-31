@@ -16,6 +16,7 @@ Keep this file current. When the workflow, the structure or a standing preferenc
 - The fixed bottom bar has a back button and the next action. "Varv 1 klart" and "Varv 2 klart" move the row counter on, but only when the counter is on that row, so going back and forward never counts twice. Swiping right is the same as back.
 - On the knitting pages a status box shows the repeat, the row and the stitch count, and opens the row counter. The glossary, all "Bra att veta" notes and the original pattern are in the Ordlista sheet (top right). Each page also shows the notes that belong to it.
 - Row diagrams (`ROW1`, `ROW2`) show every part of the row in the order you knit it, numbered like the steps, with done steps faded and the next one marked. They must match the pattern exactly. They show order, not left and right on the needle.
+- The end is exact, not just "about 6": as written, row 1 needs 4 stitches on each side of the centre stitch and row 2 needs 6, so a row only counts if it fits (`minSide`, `canKnit`, `rowsLeft`). With 116 the last row is row 35 at 12 stitches; with 316 it is row 103 at 8. The guide then says to bind off.
 - The open page and ticked steps are saved, so the guide reopens where you left off. The screen stays on while a guide is open.
 
 ## Content

@@ -367,7 +367,14 @@ function list() {
 const PAGES = ["start", "cast", "mark", "r1", "r2a", "r2b", "loop", "end"];
 const ROW_PAGES = ["r1", "r2a", "r2b", "loop"];
 
-const finished = () => count(S.size, rowsDone()) <= 6;
+/* How far the pattern goes, as written. Row 1 takes 1 stitch from each side of the centre stitch and needs 4 there
+   (2 stitches and a decrease). Row 2 takes 2 from each side and needs 6 (2 stitches, the edge decrease and the one at
+   the marker). An even cast-on gives sides of n/2 - 1 and n/2, so the smaller side decides. */
+const minSide = (n, done) => n / 2 - 1 - 3 * Math.floor(done / 2) - (done % 2);
+const canKnit = (n, done) => minSide(n, done) >= (done % 2 === 0 ? 4 : 6);
+const rowsLeft = (n, done) => { let k = 0; while (canKnit(n, done + k) && count(n, done + k) > 6) k++; return k; };
+const lastCount = n => count(n, rowsLeft(n, 0));
+const finished = () => rowsLeft(S.size, rowsDone()) === 0;
 
 function stepList(steps) {
   return `<ol class="steps">${steps.map((s, i) => `
@@ -427,8 +434,9 @@ function refreshDiagram() {
 const NOTES = {
   last2: () => `<p class="note"><b>De 2 sista maskorna.</b> Mönstret slutar varje varv med en minskning när det är 4 maskor kvar. Då finns 2 maskor kvar som mönstret inte nämner. Guiden stickar dem, avigt på varv 1 och rätt på varv 2, så att båda kanterna får 2 maskor. Det är markerat med "Står inte i mönstret".</p>`,
   hv: () => `<p class="note"><b>-h och -v.</b> Mönstret förklarar inte förkortningarna. Har ditt mönster en förkortningslista gäller den före den här guiden. Alla fyra minskningar tar bort exakt 1 maska, så antalet maskor blir rätt oavsett. Det enda som skiljer är hur minskningen ser ut.</p>`,
+  marker: () => `<p class="note"><b>Före markören.</b> Mönstret skriver "rm tills markören, minsk-rm-v, flytta markören". Minskningen kommer före markören flyttas, så den måste göras med de 2 maskorna närmast före markören. Därför stickar guiden rätt tills det är 2 maskor kvar före markören. Maskantalet blir detsamma.</p>`,
   mid: () => `<p class="note"><b>Mittmaskan.</b> ${S.size} är jämnt, så ena sidan av mittmaskan får en maska mer än den andra. Mittmaskan själv minskas aldrig. Markörerna följer med hela vägen.</p>`,
-  end: () => `<p class="note"><b>Mot slutet.</b> Mönstret säger "ca 6 maskor". När det är få maskor kvar räcker de inte alltid till alla minskningar. Går ett varv inte att sticka som det står, är det dags att maska av.</p>`
+  end: () => `<p class="note"><b>Mot slutet.</b> Mönstret säger "ca 6 maskor". Varv 1 behöver minst 4 maskor på varje sida om mittmaskan och varv 2 minst 6, annars får minskningarna inte plats. Med ${S.size} maskor går det sista varvet att sticka när du har ${lastCount(S.size)} maskor kvar, efter ${rowsLeft(S.size, 0)} varv. Guiden säger till när det är dags att maska av.</p>`
 };
 const notes = keys => `<div class="block-label label">Bra att veta</div>${keys.map(k => NOTES[k]()).join("")}`;
 
@@ -452,9 +460,9 @@ function status() {
 }
 
 function endWarning() {
-  const now = count(S.size, rowsDone());
-  if (now <= 6) return `<div class="warn"><b>Dags att maska av.</b> Du har ${now} maskor kvar, och mönstret säger att du ska maska av vid ungefär 6.</div>`;
-  if (now <= 12) return `<div class="warn"><b>Nära slutet.</b> Mönstret säger maska av vid ungefär 6 maskor. Går nästa varv inte att sticka som det står, maska av redan nu.</div>`;
+  const n = S.size, now = count(n, rowsDone()), left = rowsLeft(n, rowsDone());
+  if (left === 0) return `<div class="warn"><b>Dags att maska av.</b> Du har ${now} maskor kvar. Fler varv går inte att sticka som mönstret är skrivet, så närmare "ca 6" kommer du inte.</div>`;
+  if (left <= 2) return `<div class="warn"><b>Nära slutet.</b> ${left === 1 ? "1 varv" : "2 varv"} till går att sticka som mönstret är skrivet. Sedan har du ${lastCount(n)} maskor kvar och det är dags att maska av.</div>`;
   return "";
 }
 
@@ -483,7 +491,7 @@ const PAGE_VIEWS = {
       <div class="ing"><span class="amt">${n}</span><span>maskor att lägga upp</span></div>
       <div class="ing"><span class="amt">2</span><span>maskmarkörer</span></div>
       <div class="ing"><span class="amt"></span><span>stickor och garn enligt mönstret</span></div>
-      <div class="ing"><span class="amt"></span><span>gärna en säkerhetsnål att sätta på rätsidan, så du ser vilken sida som är vilken</span></div>
+      <div class="ing"><span class="amt"></span><span>gärna en säkerhetsnål att sätta på rätsidan, så du ser vilken sida som är vilken<span class="inferred" style="display:table;margin-top:6px">Står inte i mönstret</span></span></div>
       <p class="hint" style="margin-top:16px">Förkortningar och mönstret i original finns under Ordlista uppe till höger.</p>`;
   },
 
@@ -506,7 +514,7 @@ const PAGE_VIEWS = {
       diagram +
       stepList([
         { id: "p2", text: `Räkna fram till maska nummer <b>${mid}</b>. Det är mittmaskan.`,
-          aside: `${n} är ett jämnt tal, så det finns ingen exakt mitt. Med maska ${mid} har ena sidan ${mid - 1} maskor och den andra ${n - mid}.` },
+          aside: `${n} är ett jämnt tal, så det finns ingen exakt mitt. Med maska ${mid} har ena sidan ${mid - 1} maskor och den andra ${n - mid}.`, inferred: true },
         { id: "p3", text: `Sätt en markör på varsin sida om mittmaskan, en före och en efter.` }
       ]) + notes(["mid"]);
   },
@@ -531,12 +539,12 @@ const PAGE_VIEWS = {
       stepList([
         { id: "r2a", text: `Sticka <b>2</b> räta maskor.` },
         { id: "r2b", text: `Gör ${term("rm-h")}. Två maskor blir en.` },
-        { id: "r2c", text: `Sticka rätt tills det är <b>2</b> maskor kvar före den första markören.`, aside: "Mönstret skriver \"rm tills markören\", men minskningen som följer behöver de 2 maskorna närmast markören." },
+        { id: "r2c", text: `Sticka rätt tills det är <b>2</b> maskor kvar före den första markören.`, aside: "Mönstret skriver \"rm tills markören\", men minskningen som följer behöver de 2 maskorna närmast markören.", inferred: true },
         { id: "r2d", text: `Gör ${term("rm-v")} med de 2 maskorna före markören.` },
         { id: "r2e", text: `Flytta markören till högra stickan.` },
         { id: "r2f", text: `Sticka <b>1</b> rät maska. Det är mittmaskan.` },
         { id: "r2g", text: `Flytta markören till högra stickan.` }
-      ]);
+      ]) + notes(["marker"]);
   },
 
   r2b() {
@@ -556,8 +564,10 @@ const PAGE_VIEWS = {
     const title = pairs === 0 ? "Upprepa varv 1 och 2" : `Båda varven klara ${pairs} ${pairs === 1 ? "gång" : "gånger"}`;
     const intro = finished()
       ? `Nu ska du ha <b>${now}</b> maskor på stickan. Det är dags att maska av.`
-      : `Nu ska du ha <b>${now}</b> maskor på stickan. Sticka varv 1 och varv 2 om och om igen tills det är ungefär 6 maskor kvar.`;
-    const early = !finished() && now <= 12 ? `<div class="chips"><button class="chip" data-page="end">Maska av nu</button></div>` : "";
+      : rowsLeft(n, done) <= 2
+        ? `Nu ska du ha <b>${now}</b> maskor på stickan.`
+        : `Nu ska du ha <b>${now}</b> maskor på stickan. Sticka varv 1 och varv 2 om och om igen tills det är ungefär 6 maskor kvar.`;
+    const early = !finished() && rowsLeft(n, done) <= 2 ? `<div class="chips"><button class="chip" data-page="end">Maska av nu</button></div>` : "";
     return pageHead("Upprepa", title, intro) +
       status() + endWarning() + early +
       `<div class="block-label label">Räkna dina maskor</div>
@@ -567,7 +577,7 @@ const PAGE_VIEWS = {
 
   end() {
     return pageHead("Avsluta", "Maska av") +
-      stepList([{ id: "e1", text: `När du har ungefär <b>6</b> maskor kvar: maska av.` }]) + notes(["end"]);
+      stepList([{ id: "e1", text: `När du har ungefär <b>6</b> maskor kvar: maska av.`, aside: `Med ${S.size} maskor är det när du har ${lastCount(S.size)} maskor kvar. Se Bra att veta.` }]) + notes(["end"]);
   }
 };
 
@@ -588,7 +598,7 @@ function refSheet() {
     <div class="ing"><span class="amt">varv</span><span>en rad, från ena kanten till den andra</span></div>
     <div class="ing"><span class="amt">flytta markören</span><span>lyft över markören från vänstra till högra stickan</span></div>
     ${Object.keys(TERMS).map(k => `<button class="ing" data-term="${k}"><span class="amt">${TERMS[k].name}</span><span class="txt">minskning, 2 maskor blir 1<span class="more">Tryck för att se hur</span></span></button>`).join("")}
-    ${notes(["last2", "hv", "mid", "end"])}
+    ${notes(["last2", "marker", "hv", "mid", "end"])}
     <div class="block-label label">Mönstret i original</div>
     <div class="original">${esc(PATTERN)}</div>
     <p class="hint" style="margin-top:12px">Guiden bygger bara på mönstertexten ovan.</p>`;
@@ -597,10 +607,8 @@ function refSheet() {
 function counterSheet() {
   const n = S.size, done = rowsDone(), row = currentRow();
   const now = count(n, done), after = now - (row === 1 ? 2 : 4);
-  const finished = now <= 6;
-  let warn = "";
-  if (finished) warn = `<div class="warn"><b>Dags att maska av.</b> Du har ${now} maskor kvar, och mönstret säger att du ska maska av vid ungefär 6.</div>`;
-  else if (now <= 12) warn = `<div class="warn"><b>Nära slutet.</b> Mönstret säger maska av vid ungefär 6 maskor. Går nästa varv inte att sticka som det står, maska av redan nu.</div>`;
+  const finished = rowsLeft(n, done) === 0;
+  const warn = endWarning();
   return `<div class="sheet-title">Varvräknare</div>
     <div class="group-label label"><span>Upprepning ${repeatNo()}</span></div>
     <div class="counter-row">${finished ? "Maska av" : `Varv ${row} · ${row === 1 ? "avigsidan" : "rätsidan"}`}</div>
@@ -648,7 +656,7 @@ const NEXT = {
   start: ["Börja: lägg upp", () => go("cast")],
   cast: ["Nästa: markera mitten", () => go("mark")],
   mark: ["Nästa: varv 1", () => go("r1")],
-  r1: ["Varv 1 klart", () => { finishRow(1); go("r2a"); }],
+  r1: ["Varv 1 klart", () => { finishRow(1); go(finished() ? "loop" : "r2a"); }],
   r2a: ["Nästa: andra halvan", () => go("r2b")],
   r2b: ["Varv 2 klart", () => { finishRow(2); go("loop"); }],
   loop: () => finished() ? ["Nästa: maska av", () => go("end")] : ["Sticka varv 1 igen", () => go("r1")],
