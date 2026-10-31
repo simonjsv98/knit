@@ -679,8 +679,8 @@ const NEXT = {
 };
 const PAGE_NAMES = { cast: "lägg upp", mark: "markera mitten", r1: "varv 1", r2a: "varv 2", r2b: "varv 2, andra halvan", loop: "upprepa", end: "maska av" };
 const nextAction = () => typeof NEXT[S.page] === "function" ? NEXT[S.page]() : NEXT[S.page];
-const PREV = { cast: "start", mark: "cast", r1: () => rowsDone() >= 2 ? "loop" : "mark", r2a: "r1", r2b: "r2a", loop: "r2b", end: "loop" };
-const prevPage = () => typeof PREV[S.page] === "function" ? PREV[S.page]() : PREV[S.page];
+// The back arrow always goes one page back in the fixed order, so it always leads back to the overview, never round in a loop.
+const prevPage = () => { const i = PAGES.indexOf(S.page); return i > 0 ? PAGES[i - 1] : null; };
 
 const setPage = page => {
   S.page = page; pset("page", page);
@@ -881,10 +881,11 @@ async function updateApp(button) {
 
 /* ---------- Swipe right to go back, as on iOS ---------- */
 // The previous page sits underneath from the first movement. The current page follows the finger
-// and the one below drifts in at a slower pace. In the guide, back is the previous step.
+// and the one below drifts in at a slower pace. As in RECIPES, a swipe does what the back link at the top does:
+// from a step to the overview, from the overview to the pattern list, from the list to the start page.
 const canGoBack = () => S.view !== "home";
 function stepBack() {
-  if (S.view === "guide" && prevPage()) setPage(prevPage());
+  if (S.view === "guide" && S.page !== "start") setPage("start");
   else S.view = S.view === "guide" ? "list" : "home";
   draw();
 }
