@@ -120,6 +120,11 @@ button.ing .amt { color: var(--accent); }
 .step .text b { font-weight: 600; color: var(--accent); }
 .step .aside { display: block; font-size: 1rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
 .step.done { opacity: .32; }
+.en { display: block; margin-top: 3px; font-size: .92rem; color: var(--muted); }
+.en b { font-weight: 600; color: var(--ink); }
+.en-link { color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.en-abbr { font-size: .8em; font-weight: 500; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; white-space: nowrap; }
+.more-btn { display: inline-block; margin-top: 6px; min-height: 32px; font-size: .9rem; color: var(--accent); font-weight: 500; }
 .term { font-weight: 600; color: var(--accent); text-decoration: underline dotted; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .inferred { display: inline-block; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px; margin-top: 8px; }
 
@@ -323,7 +328,7 @@ const STRIPE_ROWS = STRIPES.reduce((n, [len]) => n + len, 0);
 
 const TERMS = {
   "rm-h": {
-    name: "minsk-rm-h",
+    name: "minsk-rm-h", en: ["k2tog", "knit two together"],
     what: "Sticka höger sticka genom två maskor samtidigt som om de vore en (genom de främre maskbågarna) och sticka dem räta tillsammans.",
     how: [
       "Stick in högra stickan i de 2 första maskorna på vänstra stickan samtidigt, framifrån, som när du stickar rätt.",
@@ -332,7 +337,7 @@ const TERMS = {
     ]
   },
   "rm-v": {
-    name: "minsk-rm-v",
+    name: "minsk-rm-v", en: ["ssk", "slip slip knit"],
     what: "Lyft en maska rät utan att sticka den, lyft nästa maska på samma sätt, stick sedan in vänster sticka i de två lyfta maskorna framifrån och sticka ihop dem räta",
     how: [
       "Lyft 1 maska över till högra stickan som om du skulle sticka den rätt, men sticka den inte.",
@@ -342,7 +347,7 @@ const TERMS = {
     ]
   },
   "am-v": {
-    name: "minsk-am-v",
+    name: "minsk-am-v", en: ["p2tog tbl", "purl two together through the back loop"],
     what: "Sticka två aviga maskor tillsammans genom den bakre maskbågen",
     how: [
       "Stick in högra stickan i de 2 första maskorna samtidigt, genom de bakre maskbågarna (den del av maskan som sitter längst från dig).",
@@ -351,7 +356,7 @@ const TERMS = {
     ]
   },
   "am-h": {
-    name: "minsk-am-h",
+    name: "minsk-am-h", en: ["p2tog", "purl two together"],
     what: "sticka två aviga maskor tillsammans genom den främre maskbågen",
     how: [
       "Stick in högra stickan i de 2 första maskorna samtidigt, som när du stickar avigt, genom de främre maskbågarna.",
@@ -444,7 +449,29 @@ const rowsDone = () => S.rows[S.size];
 const currentRow = () => (rowsDone() % 2 === 0 ? 1 : 2);
 const repeatNo = () => Math.floor(rowsDone() / 2) + 1;
 
-function term(key, label) { return `<button class="term" data-term="${key}">${esc(label || TERMS[key].name)}</button>`; }
+/* English: every Swedish abbreviation gets the English abbreviation and the English words beside it.
+   The English words link to a YouTube search for "how to …". Words that would find something other than knitting
+   on their own (stitch, row, marker, colours) get "knitting" added to the search. */
+const youtube = q => "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+const enLink = (text, q) => `<a class="en-link" href="${youtube(q || "how to " + text)}" target="_blank" rel="noopener">${esc(text)} ↗</a>`;
+const GLOSSARY = [
+  // Swedish, its meaning, English abbreviation, English words, YouTube search if not "how to <words>"
+  ["m", "maska", "st", "stitch", "how to stitch knitting"],
+  ["rm", "rätmaska", "k", "knit"],
+  ["am", "avig maska", "p", "purl"],
+  ["v, varv", "en rad, från ena kanten till den andra", "row", "row", "how to knit a row"],
+  ["flytta markören", "lyft över markören från vänstra till högra stickan", "sm", "slip marker", "how to slip marker knitting"],
+  ["markör", "maskmarkör", "pm", "place marker", "how to place marker knitting"],
+  ["grundfärg", "huvudfärgen", "MC", "main color", "how to change color knitting"],
+  ["F1, F2", "mönsterfärg 1 och 2", "CC1, CC2", "contrast color", "how to change color knitting"],
+  ["lägg upp", "", "CO", "cast on"],
+  ["maska av", "", "BO", "bind off"],
+  ["blocka", "", "", "block", "how to block knitting"]
+];
+function term(key, label) {
+  const t = TERMS[key];
+  return `<button class="term" data-term="${key}">${esc(label || t.name)}</button> <a class="en-abbr" href="${youtube("how to " + t.en[1])}" target="_blank" rel="noopener">(${t.en[0]})</a>`;
+}
 
 function checkpoints(n) {
   const out = [];
@@ -772,14 +799,10 @@ function guide() {
 
 function refSheet() {
   return `<div class="sheet-title">Ordlista</div>
-    <div class="ing"><span class="amt">m</span><span>maska</span></div>
-    <div class="ing"><span class="amt">rm</span><span>rätmaska</span></div>
-    <div class="ing"><span class="amt">am</span><span>avig maska</span></div>
-    <div class="ing"><span class="amt">v</span><span>varv</span></div>
-    <div class="ing"><span class="amt">F1, F2</span><span>mönsterfärg 1 och 2</span></div>
-    <div class="ing"><span class="amt">varv</span><span>en rad, från ena kanten till den andra</span></div>
-    <div class="ing"><span class="amt">flytta markören</span><span>lyft över markören från vänstra till högra stickan</span></div>
-    ${Object.keys(TERMS).map(k => `<button class="ing" data-term="${k}"><span class="amt">${TERMS[k].name}</span><span class="txt">${esc(TERMS[k].what)}<span class="more">Tryck för att se hur</span></span></button>`).join("")}
+    <p class="hint" style="margin-top:6px">Tryck på den engelska texten för att söka "how to …" på YouTube.</p>
+    ${GLOSSARY.map(([sv, what, abbr, text, q]) => `<div class="ing gloss"><span class="amt">${esc(sv)}</span><span>${what ? esc(what) : ""}<span class="en">${abbr && abbr !== text ? `<b>${esc(abbr)}</b> · ` : ""}${enLink(text, q)}</span></span></div>`).join("")}
+    <div class="block-label label">Minskningar</div>
+    ${Object.keys(TERMS).map(k => `<div class="ing gloss"><span class="amt">${TERMS[k].name}</span><span>${esc(TERMS[k].what)}<span class="en"><b>${TERMS[k].en[0]}</b> · ${enLink(TERMS[k].en[1])}</span><button class="more-btn" data-term="${k}">Så gör du ›</button></span></div>`).join("")}
     ${notes(["last2", "marker", "colours", "mid", "size", "end"])}
     <div class="block-label label">Mönstret i original</div>
     <div class="original">${esc(PATTERN_INFO)}</div>
@@ -814,6 +837,7 @@ function counterSheet() {
 function termSheet(key) {
   const t = TERMS[key];
   return `<div class="sheet-title">${esc(t.name)}</div>
+    <p class="en" style="margin-top:4px"><b>${t.en[0]}</b> · ${enLink(t.en[1])}</p>
     <div class="group-label label"><span>Så står det i mönstret</span></div>
     <div class="original" style="margin-top:4px">${esc(t.what)}</div>
     <div class="group-label label"><span>Steg för steg</span></div>
@@ -951,6 +975,7 @@ function toggleStep(el) {
 }
 
 document.addEventListener("click", e => {
+  if (e.target.closest("a[href]")) return;   // English links open YouTube; they don't tick a step
   if (e.target === sheet) return closeSheet();
   const termEl = e.target.closest("[data-term]");
   if (termEl) { e.stopPropagation(); return openSheet(termEl.dataset.term); }

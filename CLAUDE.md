@@ -26,5 +26,6 @@ Keep this file current. When the workflow, the structure or a standing preferenc
 ## Content
 
 - The pattern is Ingrid Scarf (1837) from Yllotyll. Simon sent the PDF; materials, abbreviations and swatch are in `PATTERN_INFO`, the description, colour changes and blocking in `PATTERN`. The parts about fringes are left out on purpose: Simon is not making them.
+- English: every Swedish abbreviation has the English abbreviation and words beside it (`GLOSSARY`, `TERMS[...].en`): k2tog, ssk, p2tog, p2tog tbl, k, p, st, sm, MC/CC, CO, BO. The English words (and the English abbreviation after a decrease in the steps) link to a YouTube search for "how to <words>"; words that would find something else on their own get "knitting" added.
 - The decreases are defined by the pattern's abbreviation list (`TERMS[...].what`, quoted as written); the step-by-step text under it follows that definition.
 - The guide is built only from the pattern text in `PATTERN_INFO` and `PATTERN` in `index.html`. Anything the guide adds that the pattern does not say is marked "Står inte i mönstret" and explained under "Bra att veta". Never invent pattern details.
