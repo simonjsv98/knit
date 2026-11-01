@@ -12,7 +12,8 @@ Keep this file current. When the workflow, the structure or a standing preferenc
 ## Structure
 
 - Start page (tile) → pattern list (`PATTERNS`) → a pattern's guide. Each pattern saves its progress under its own id (`knit-<id>-…` in localStorage). The first pattern is Ingrid Scarf (id `monster-1`, kept so saved progress stays). Only it has a guide so far; a new pattern gets an entry in `PATTERNS` and its own pages.
-- The guide is one page per stage, not one long scroll: start (size, overview, what you need), cast on, mark the centre, row 1, row 2 in two halves (up to and after the centre stitch), repeat (stitch counts), bind off. `PAGES` and `PAGE_VIEWS` in `index.html`.
+- The guide is one page per stage, not one long scroll: start (size, overview, what you need, colours), swatch, cast on, mark the centre, row 1, row 2 in two halves (up to and after the centre stitch), repeat (stitch counts), bind off, weave in ends and block. `PAGES` and `PAGE_VIEWS` in `index.html`.
+- Colour stripes (`STRIPES`): rows 1–5 main colour, 6–8 F1, 9–10 main, 11–15 F2, 16–17 main, 18–20 F1, then main. Rows count from the first row after casting on, the same as the row counter (the pattern does not say; marked). The status box and the row counter show the colour of the row, and the first row of a new colour gets a notice to change colour and cut the yarn.
 - Sizes are `SIZES` = 116 and 317. Simon replaced the pattern's 316 with 317 (one stitch more, so the centre stitch has 158 stitches on each side); 317 is the default and he is knitting it. `OWN_SIZE` marks sizes that differ from the pattern, and the guide marks them "Står inte i mönstret" with a note. Rows counted on 316 carried over to 317. (Simon tried 411 for a moment and went back to 317; a saved 411 moves back to 317 and the 317 row count is kept.) The size can still be changed on the overview.
 - On a step page the top-left link goes to the pattern's overview ("← Översikt"); on the overview it goes to the pattern list. The overview's big button continues from the last step page ("Fortsätt: …").
 - The fixed bottom bar has a back button and the next action. "Varv 1 klart" and "Varv 2 klart" move the row counter on, but only when the counter is on that row, so going back and forward never counts twice. The back arrow goes one page back in the fixed order (never round in a loop), so it always reaches the overview. Swiping right does what the top-left link does, as in RECIPES: step → overview → pattern list → start page.
@@ -24,4 +25,6 @@ Keep this file current. When the workflow, the structure or a standing preferenc
 
 ## Content
 
-- The guide is built only from the pattern text in `PATTERN` in `index.html`. Anything the guide adds that the pattern does not say is marked "Står inte i mönstret" and explained under "Bra att veta". Never invent pattern details.
+- The pattern is Ingrid Scarf (1837) from Yllotyll. Simon sent the PDF; materials, abbreviations and swatch are in `PATTERN_INFO`, the description, colour changes and blocking in `PATTERN`. The parts about fringes are left out on purpose: Simon is not making them.
+- The decreases are defined by the pattern's abbreviation list (`TERMS[...].what`, quoted as written); the step-by-step text under it follows that definition.
+- The guide is built only from the pattern text in `PATTERN_INFO` and `PATTERN` in `index.html`. Anything the guide adds that the pattern does not say is marked "Står inte i mönstret" and explained under "Bra att veta". Never invent pattern details.
